@@ -4,6 +4,7 @@ dist/
 dist-ssr/
 
 # Variables d'environnement (ne jamais committer les vraies valeurs)
+.env
 .env.local
 .env.production
 

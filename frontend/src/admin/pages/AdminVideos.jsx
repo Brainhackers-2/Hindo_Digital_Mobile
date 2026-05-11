@@ -7,7 +7,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiPlus, HiPencil, HiTrash, HiX, HiCheck,
-  HiPlay, HiEye, HiEyeOff, HiUpload, HiFilm, HiLink, HiLink as HiLinkIcon
+  HiPlay, HiEye, HiEyeOff, HiUpload, HiFilm, HiLink
 } from 'react-icons/hi'
 import { FaYoutube, FaVimeo } from 'react-icons/fa'
 import AdminLayout from '../layout/AdminLayout'

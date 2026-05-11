@@ -14,9 +14,8 @@ import SectionHeader  from '../components/SectionHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
 import useFetch       from '../hooks/useFetch'
 import { getRealisations } from '../services/realisationsApi'
-import api from '../services/api'
+import { getVideos }       from '../services/videosApi'
 
-const API_STORAGE_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8000'
 const CATEGORIES = ['Tous', 'Réseaux', 'Vidéosurveillance', 'Web & Mobile', 'Formation', 'Infographie']
 
 // Données de démonstration réalisations
@@ -30,12 +29,10 @@ const REALISATIONS_DEFAUT = [
 ]
 
 const Realisations = () => {
-  // ---- Données images ----
   const { data: realisations, loading, error } = useFetch(getRealisations)
   const liste = realisations || REALISATIONS_DEFAUT
 
-  // ---- Données vidéos ----
-  const { data: videos, loading: loadingVideos } = useFetch(() => api.get('/videos'))
+  const { data: videos, loading: loadingVideos } = useFetch(getVideos)
 
   // ---- États ----
   const [categorieActive, setCategorieActive] = useState('Tous')
