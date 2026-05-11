@@ -1,19 +1,31 @@
 // ============================================================
-// services/formationsApi.js — Appels API pour les Formations
-// Gère la récupération et l'inscription aux formations
+// services/formationsApi.js — Formations depuis Supabase
 // ============================================================
 
-import api from './api'
+import { supabase } from '../lib/supabase'
 
-/**
- * Récupère la liste complète des formations disponibles
- * @returns {Promise} Liste { id, titre, description, duree, niveau, prix }
- */
-export const getFormations = () => api.get('/formations')
+export const getFormations = async () => {
+  const { data, error } = await supabase
+    .from('formations')
+    .select('*')
+    .order('titre', { ascending: true })
 
-/**
- * Enregistre une inscription à une formation
- * @param {Object} data — { nom, email, telephone, formation_id }
- * @returns {Promise} Confirmation d'inscription
- */
-export const inscrireFormation = (data) => api.post('/formations/inscription', data)
+  if (error) throw error
+  return { data: { data } }
+}
+
+export const inscrireFormation = async (formData) => {
+  const { data, error } = await supabase
+    .from('inscriptions')
+    .insert([{
+      nom:          formData.nom,
+      email:        formData.email,
+      telephone:    formData.telephone || null,
+      formation_id: formData.formation_id,
+    }])
+    .select()
+    .single()
+
+  if (error) throw error
+  return { data: { data, success: true } }
+}

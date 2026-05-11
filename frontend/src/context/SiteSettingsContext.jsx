@@ -1,26 +1,29 @@
 // ============================================================
-// context/SiteSettingsContext.jsx — Paramètres globaux du site
-// Charge le logo + la photo d'équipe depuis l'API Laravel
+// context/SiteSettingsContext.jsx — Logo et photo équipe via Supabase
 // ============================================================
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import api from '../services/api'
+import { supabase } from '../lib/supabase'
 
 const SiteSettingsContext = createContext(null)
 
+const publicUrl = (path) =>
+  path ? supabase.storage.from('hindo-media').getPublicUrl(path).data.publicUrl : null
+
 export const SiteSettingsProvider = ({ children }) => {
-  const [logoUrl,       setLogoUrl]       = useState(null)
-  const [teamImageUrl,  setTeamImageUrl]  = useState(null)
-  const [loading,       setLoading]       = useState(true)
+  const [logoUrl,      setLogoUrl]      = useState(null)
+  const [teamImageUrl, setTeamImageUrl] = useState(null)
+  const [loading,      setLoading]      = useState(true)
 
   const chargerSettings = useCallback(async () => {
     try {
-      const res = await api.get('/settings')
-      setLogoUrl(res.data?.data?.logo_url        || null)
-      setTeamImageUrl(res.data?.data?.team_image_url || null)
+      const { data } = await supabase.from('settings').select('key, value')
+      const map = {}
+      ;(data || []).forEach(row => { map[row.key] = row.value })
+      setLogoUrl(publicUrl(map.logo_path))
+      setTeamImageUrl(publicUrl(map.team_image_path))
     } catch {
-      setLogoUrl(null)
-      setTeamImageUrl(null)
+      setLogoUrl(null); setTeamImageUrl(null)
     } finally {
       setLoading(false)
     }
@@ -37,6 +40,6 @@ export const SiteSettingsProvider = ({ children }) => {
 
 export const useSiteSettings = () => {
   const ctx = useContext(SiteSettingsContext)
-  if (!ctx) throw new Error('useSiteSettings doit être utilisé dans SiteSettingsProvider')
+  if (!ctx) throw new Error('useSiteSettings doit être dans SiteSettingsProvider')
   return ctx
 }

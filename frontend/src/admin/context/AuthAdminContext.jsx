@@ -1,55 +1,43 @@
 // ============================================================
-// admin/context/AuthAdminContext.jsx — Contexte d'authentification admin
-// Gère le token Sanctum, l'état de connexion et les redirections
+// admin/context/AuthAdminContext.jsx — Auth admin via Supabase Auth
+// Remplace l'ancien système Sanctum (Laravel)
 // ============================================================
 
 import { createContext, useContext, useState, useEffect } from 'react'
-import adminApi from '../services/adminApi'
+import { supabase } from '../../lib/supabase'
 
 const AuthAdminContext = createContext(null)
 
 export const AuthAdminProvider = ({ children }) => {
   const [admin, setAdmin]     = useState(null)
-  const [loading, setLoading] = useState(true) // Vérifie le token au démarrage
+  const [loading, setLoading] = useState(true)
 
-  // Au montage : vérifie si un token valide est stocké en localStorage
+  // Écoute les changements de session Supabase
   useEffect(() => {
-    const token = localStorage.getItem('hindo_admin_token')
-    if (token) {
-      adminApi.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      // Vérifie que le token est encore valide en appelant /me
-      adminApi.get('/admin/me')
-        .then((res) => setAdmin(res.data.data))
-        .catch(() => {
-          // Token expiré ou invalide — on déconnecte
-          localStorage.removeItem('hindo_admin_token')
-          delete adminApi.defaults.headers.common['Authorization']
-        })
-        .finally(() => setLoading(false))
-    } else {
+    // Récupère la session existante au démarrage
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAdmin(session?.user ?? null)
       setLoading(false)
-    }
+    })
+
+    // Écoute les connexions/déconnexions en temps réel
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAdmin(session?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  // Connexion : stocke le token et charge les infos admin
   const login = async (email, password) => {
-    const res   = await adminApi.post('/admin/login', { email, password })
-    const token = res.data.data.token
-    localStorage.setItem('hindo_admin_token', token)
-    adminApi.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    setAdmin(res.data.data.user)
-    return res.data
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+    setAdmin(data.user)
+    return data
   }
 
-  // Déconnexion : révoque le token et nettoie le state
   const logout = async () => {
-    try {
-      await adminApi.post('/admin/logout')
-    } catch {
-      // Ignore les erreurs réseau lors du logout
-    }
-    localStorage.removeItem('hindo_admin_token')
-    delete adminApi.defaults.headers.common['Authorization']
+    await supabase.auth.signOut()
     setAdmin(null)
   }
 
@@ -60,7 +48,6 @@ export const AuthAdminProvider = ({ children }) => {
   )
 }
 
-// Hook raccourci pour utiliser le contexte d'auth admin
 export const useAuthAdmin = () => {
   const ctx = useContext(AuthAdminContext)
   if (!ctx) throw new Error('useAuthAdmin doit être utilisé dans AuthAdminProvider')

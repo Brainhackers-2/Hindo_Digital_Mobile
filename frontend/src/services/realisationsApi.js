@@ -1,12 +1,24 @@
 // ============================================================
-// services/realisationsApi.js — Appels API pour les Réalisations
-// Communique avec l'endpoint Laravel GET /api/v1/realisations
+// services/realisationsApi.js — Réalisations depuis Supabase
 // ============================================================
 
-import api from './api'
+import { supabase } from '../lib/supabase'
 
-/**
- * Récupère la liste des réalisations avec leurs images et catégories
- * @returns {Promise} Liste { id, titre, categorie, image_path, description }
- */
-export const getRealisations = () => api.get('/realisations')
+export const getRealisations = async () => {
+  const { data, error } = await supabase
+    .from('realisations')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  // Construit l'URL publique de chaque image via Supabase Storage
+  const enriched = (data || []).map((r) => ({
+    ...r,
+    image_url: r.image_path
+      ? supabase.storage.from('hindo-media').getPublicUrl(r.image_path).data.publicUrl
+      : null,
+  }))
+
+  return { data: { data: enriched } }
+}

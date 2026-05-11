@@ -1,12 +1,15 @@
 // ============================================================
-// services/servicesApi.js — Appels API pour les Services
-// Communique avec l'endpoint Laravel GET /api/v1/services
+// services/servicesApi.js — Services depuis Supabase
 // ============================================================
 
-import api from './api'
+import { supabase } from '../lib/supabase'
 
-/**
- * Récupère la liste complète des services depuis la base de données
- * @returns {Promise} Liste des services { id, titre, description, icone, ordre }
- */
-export const getServices = () => api.get('/services')
+export const getServices = async () => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .order('ordre', { ascending: true })
+
+  if (error) throw error
+  return { data: { data } }
+}
