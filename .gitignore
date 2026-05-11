@@ -1,0 +1,10 @@
+# Dossier racine — ignorer les fichiers inutiles
+backend-old/
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/.env.production
+backend/storage/app/public/
+frontend/node_modules/
+frontend/dist/
+frontend/.env.production

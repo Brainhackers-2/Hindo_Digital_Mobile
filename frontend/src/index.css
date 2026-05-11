@@ -1,0 +1,98 @@
+/* ============================================================
+   index.css — Styles globaux de Hindo Digital
+   Intègre les directives Tailwind et les styles de base
+   ============================================================ */
+
+/* Directives Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Styles de base ---- */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans text-secondary bg-white antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+
+  /* Scrollbar personnalisée */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary rounded-full;
+  }
+}
+
+/* ---- Composants réutilisables via @layer ---- */
+@layer components {
+  /* Bouton principal rouge bordeaux */
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold
+           hover:bg-primary-dark transition-all duration-300
+           transform hover:-translate-y-0.5 shadow-md hover:shadow-lg;
+  }
+
+  /* Bouton secondaire contour */
+  .btn-outline {
+    @apply border-2 border-primary text-primary px-6 py-3 rounded-lg font-semibold
+           hover:bg-primary hover:text-white transition-all duration-300;
+  }
+
+  /* Card générique */
+  .card {
+    @apply bg-white rounded-xl shadow-card hover:shadow-card-hover
+           transition-all duration-300 p-6;
+  }
+
+  /* Section générique */
+  .section {
+    @apply py-16 px-4 md:px-8;
+  }
+
+  /* Conteneur centré */
+  .container-custom {
+    @apply max-w-6xl mx-auto px-4;
+  }
+
+  /* Titre de section */
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-secondary mb-4;
+  }
+
+  /* Sous-titre de section */
+  .section-subtitle {
+    @apply text-lg text-gray-500 mb-12 max-w-2xl mx-auto;
+  }
+
+  /* Barre de séparation rouge bordeaux */
+  .divider-primary {
+    @apply w-16 h-1 bg-primary rounded mx-auto mb-6;
+  }
+}
+
+/* ---- Utilitaires additionnels ---- */
+@layer utilities {
+  /* Dégradé hero */
+  .gradient-hero {
+    background: linear-gradient(135deg, #8B0000 0%, #2D2D2D 100%);
+  }
+
+  /* Texte gradient */
+  .text-gradient {
+    background: linear-gradient(135deg, #8B0000, #A52A2A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
