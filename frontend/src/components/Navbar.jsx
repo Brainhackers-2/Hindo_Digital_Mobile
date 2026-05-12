@@ -1,10 +1,11 @@
 // ============================================================
 // components/Navbar.jsx — Barre de navigation principale
-// Menu mobile qui se ferme AVANT la navigation (useNavigate)
+// UNE seule instance grâce au LayoutPublic (Outlet)
+// Le menu mobile se ferme automatiquement à chaque changement de page
 // ============================================================
 
-import { useState } from 'react'
-import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HiMenu, HiX } from 'react-icons/hi'
 import { LogoIcon } from './Footer'
@@ -20,21 +21,20 @@ const NAV_LINKS = [
 
 const Navbar = () => {
   const [menuOuvert, setMenuOuvert] = useState(false)
-  const navigate  = useNavigate()
-  const location  = useLocation()
+  const location = useLocation()
 
-  // Ferme le menu PUIS navigue vers la page choisie
-  const allerVers = (path) => {
-    setMenuOuvert(false)          // ferme d'abord le menu
-    navigate(path)                // ensuite navigue
-  }
+  // Ferme le menu à chaque changement de page
+  // Fonctionne car la Navbar est montée UNE SEULE FOIS (via LayoutPublic)
+  useEffect(() => {
+    setMenuOuvert(false)
+  }, [location.pathname])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
       <nav className="container-custom flex items-center justify-between h-16 md:h-20">
 
         {/* ---- Logo ---- */}
-        <button onClick={() => allerVers('/')} className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center gap-2.5">
           <LogoIcon size={40} />
           <div>
             <span className="font-bold text-xl font-heading text-secondary">
@@ -44,7 +44,7 @@ const Navbar = () => {
               Le Numérique à votre porte
             </p>
           </div>
-        </button>
+        </Link>
 
         {/* ---- Navigation Desktop ---- */}
         <ul className="hidden md:flex items-center gap-1">
@@ -73,7 +73,7 @@ const Navbar = () => {
 
         {/* ---- Bouton hamburger mobile ---- */}
         <button
-          onClick={() => setMenuOuvert(!menuOuvert)}
+          onClick={() => setMenuOuvert(v => !v)}
           className="md:hidden p-2 rounded-lg text-secondary hover:text-primary transition-colors"
           aria-label={menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
         >
@@ -81,7 +81,7 @@ const Navbar = () => {
         </button>
       </nav>
 
-      {/* ---- Menu mobile ---- */}
+      {/* ---- Menu mobile animé ---- */}
       <AnimatePresence>
         {menuOuvert && (
           <motion.div
@@ -92,33 +92,26 @@ const Navbar = () => {
             className="md:hidden bg-white border-t border-gray-100 shadow-lg overflow-hidden"
           >
             <ul className="container-custom py-4 flex flex-col gap-1">
-              {NAV_LINKS.map(({ path, label }) => {
-                const actif = location.pathname === path
-
-                return (
-                  <li key={path}>
-                    <button
-                      onClick={() => allerVers(path)}
-                      className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
-                        actif
+              {NAV_LINKS.map(({ path, label }) => (
+                <li key={path}>
+                  <NavLink
+                    to={path}
+                    className={({ isActive }) =>
+                      `block px-4 py-3 rounded-lg font-medium transition-colors ${
+                        isActive
                           ? 'text-primary bg-primary/10'
                           : 'text-secondary hover:text-primary hover:bg-gray-50'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  </li>
-                )
-              })}
-
-              {/* Bouton Contact */}
+                      }`
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                </li>
+              ))}
               <li className="mt-2">
-                <button
-                  onClick={() => allerVers('/contact')}
-                  className="btn-primary w-full text-center"
-                >
+                <Link to="/contact" className="btn-primary w-full text-center block">
                   Nous contacter
-                </button>
+                </Link>
               </li>
             </ul>
           </motion.div>

@@ -2,7 +2,7 @@
 // App.jsx — Routeur principal : site public + panneau admin
 // ============================================================
 
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 
 // Composants du site public
@@ -39,6 +39,19 @@ const AdminSettings    = lazy(() => import('./admin/pages/AdminSettings'))
 const AdminContenu     = lazy(() => import('./admin/pages/AdminContenu'))
 const AdminVideos      = lazy(() => import('./admin/pages/AdminVideos'))
 
+// ---- Layout public — UNE SEULE instance de Navbar et Footer ----
+// Outlet rend la page enfant entre Navbar et Footer
+// Ainsi la Navbar ne se démonte JAMAIS entre les pages → le menu se ferme correctement
+const LayoutPublic = () => (
+  <>
+    <Navbar />
+    <main>
+      <Outlet />
+    </main>
+    <Footer />
+  </>
+)
+
 // ---- Guard : redirige vers /admin/login si non connecté ----
 const AdminGuard = ({ children }) => {
   const { isAuth, loading } = useAuthAdmin()
@@ -61,15 +74,19 @@ function App() {
       <ScrollToTop />
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
+
           {/* ================================================
-              SITE PUBLIC — avec Navbar et Footer
+              SITE PUBLIC — Layout commun avec UNE seule Navbar
               ================================================ */}
-          <Route path="/" element={<><Navbar /><main><Accueil /></main><Footer /></>} />
-          <Route path="/a-propos"    element={<><Navbar /><main><APropos /></main><Footer /></>} />
-          <Route path="/services"    element={<><Navbar /><main><Services /></main><Footer /></>} />
-          <Route path="/realisations"element={<><Navbar /><main><Realisations /></main><Footer /></>} />
-          <Route path="/formation"   element={<><Navbar /><main><Formation /></main><Footer /></>} />
-          <Route path="/contact"     element={<><Navbar /><main><Contact /></main><Footer /></>} />
+          <Route element={<LayoutPublic />}>
+            <Route path="/"             element={<Accueil />}      />
+            <Route path="/a-propos"     element={<APropos />}      />
+            <Route path="/services"     element={<Services />}     />
+            <Route path="/realisations" element={<Realisations />} />
+            <Route path="/formation"    element={<Formation />}    />
+            <Route path="/contact"      element={<Contact />}      />
+            <Route path="*"             element={<NotFound />}     />
+          </Route>
 
           {/* ================================================
               PANNEAU ADMIN — sans Navbar/Footer public
@@ -111,8 +128,6 @@ function App() {
             <AdminGuard><AdminVideos /></AdminGuard>
           } />
 
-          {/* 404 */}
-          <Route path="*" element={<><Navbar /><main><NotFound /></main><Footer /></>} />
         </Routes>
       </Suspense>
     </AuthAdminProvider>
