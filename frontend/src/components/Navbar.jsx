@@ -3,8 +3,8 @@
 // Navigation responsive avec logo réel Hindo Digital
 // ============================================================
 
-import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HiMenu, HiX } from 'react-icons/hi'
 import { LogoIcon } from './Footer'
@@ -20,6 +20,12 @@ const NAV_LINKS = [
 
 const Navbar = () => {
   const [menuOuvert, setMenuOuvert] = useState(false)
+  const location = useLocation()
+
+  // Ferme le menu automatiquement à chaque changement de page
+  useEffect(() => {
+    setMenuOuvert(false)
+  }, [location.pathname])
 
   const fermerMenu = () => setMenuOuvert(false)
 
