@@ -6,7 +6,7 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
-  HiUpload, HiTrash, HiCheckCircle, HiPhotograph, HiRefresh, HiUsers
+  HiUpload, HiTrash, HiCheckCircle, HiPhotograph, HiRefresh, HiUsers, HiAdjustments
 } from 'react-icons/hi'
 import AdminLayout     from '../layout/AdminLayout'
 import adminApi        from '../services/adminApi'
@@ -184,8 +184,100 @@ const ZoneUpload = ({
 // ============================================================
 // Page principale AdminSettings
 // ============================================================
+// ---- Composant curseur de taille ----
+const CurseurTaille = ({ label, cle, valeur, onSave }) => {
+  const [val, setVal]       = useState(valeur)
+  const [saving, setSaving] = useState(false)
+  const [ok, setOk]         = useState(false)
+
+  const sauvegarder = async () => {
+    setSaving(true)
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      await supabase.from('settings').upsert({ key: cle, value: String(val) })
+      setOk(true)
+      onSave()
+      setTimeout(() => setOk(false), 2000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-card p-6 space-y-4">
+      <h3 className="font-bold font-heading text-secondary flex items-center gap-2">
+        <HiAdjustments className="text-primary" size={20} />
+        {label}
+      </h3>
+
+      {/* Curseur */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-400">Petite</span>
+          <span className="font-bold text-primary text-lg">{val}%</span>
+          <span className="text-gray-400">Grande</span>
+        </div>
+        <input
+          type="range"
+          min={40}
+          max={150}
+          step={5}
+          value={val}
+          onChange={e => { setVal(Number(e.target.value)); setOk(false) }}
+          className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer
+                     accent-primary"
+        />
+        {/* Boutons de taille rapide */}
+        <div className="flex gap-2 flex-wrap">
+          {[50, 75, 100, 125, 150].map(t => (
+            <button
+              key={t}
+              onClick={() => { setVal(t); setOk(false) }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                val === t
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-primary/10 hover:text-primary'
+              }`}
+            >
+              {t}%
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Aperçu visuel de la taille */}
+      <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-center h-16 overflow-hidden">
+        <div
+          className="bg-primary/20 rounded-lg flex items-center justify-center transition-all duration-300"
+          style={{ width: `${Math.min(val, 100)}%`, height: '40px' }}
+        >
+          <span className="text-primary text-xs font-bold">{val}%</span>
+        </div>
+      </div>
+
+      <button
+        onClick={sauvegarder}
+        disabled={saving}
+        className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+          ok
+            ? 'bg-green-500 text-white'
+            : 'btn-primary'
+        }`}
+      >
+        {saving ? (
+          <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Sauvegarde...</>
+        ) : ok ? (
+          <><HiCheckCircle size={16} /> Taille appliquée !</>
+        ) : (
+          'Appliquer cette taille'
+        )}
+      </button>
+    </div>
+  )
+}
+
 const AdminSettings = () => {
-  const { rafraichir, logoUrl, teamImageUrl, heroImageUrl } = useSiteSettings()
+  const { rafraichir, logoUrl, teamImageUrl, heroImageUrl, heroImageTaille, teamImageTaille } = useSiteSettings()
   const { data, refetch } = useFetch(() => adminApi.get('/admin/settings'))
 
   const handleSuccess = () => { refetch(); rafraichir() }
@@ -198,7 +290,7 @@ const AdminSettings = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold font-heading text-secondary">Images du site</h2>
-            <p className="text-gray-500 text-sm mt-1">Logo et photo de l'équipe</p>
+            <p className="text-gray-500 text-sm mt-1">Upload et taille des images</p>
           </div>
           <button
             onClick={handleSuccess}
@@ -236,6 +328,14 @@ const AdminSettings = () => {
           onSuccess={handleSuccess}
         />
 
+        {/* ---- Taille image Hero ---- */}
+        <CurseurTaille
+          label="Taille de l'image — Page d'accueil"
+          cle="hero_image_taille"
+          valeur={heroImageTaille}
+          onSave={handleSuccess}
+        />
+
         {/* ---- Section 3 : Photo de l'équipe ---- */}
         <ZoneUpload
           titre="Photo de l'équipe fondatrice"
@@ -247,6 +347,14 @@ const AdminSettings = () => {
           endpointDelete="/admin/settings/team-image"
           fieldName="image"
           onSuccess={handleSuccess}
+        />
+
+        {/* ---- Taille photo équipe ---- */}
+        <CurseurTaille
+          label="Taille de la photo — Page À propos"
+          cle="team_image_taille"
+          valeur={teamImageTaille}
+          onSave={handleSuccess}
         />
 
         {/* Aperçu dans le contexte de la page À propos */}

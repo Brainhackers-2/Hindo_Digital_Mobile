@@ -50,8 +50,8 @@ const ARGUMENTS = [
 const Accueil = () => {
   const { data: services, loading: loadingServices } = useFetchRealtime(getServices, 'services')
   const { data: temoignages, loading: loadingTemo }  = useFetchRealtime(getTemoignages, 'temoignages')
-  const { c }            = useContenu()
-  const { heroImageUrl } = useSiteSettings()
+  const { c }                                    = useContenu()
+  const { heroImageUrl, heroImageTaille = 100 }  = useSiteSettings()
 
   // Stats et arguments construits dynamiquement depuis le CMS
   const stats = [
@@ -90,8 +90,11 @@ const Accueil = () => {
               className="relative flex justify-center"
             >
               {heroImageUrl ? (
-                /* Image uploadée depuis l'admin */
-                <div className="relative w-full max-w-lg">
+                /* Image uploadée — taille contrôlée par l'admin */
+                <div
+                  className="relative transition-all duration-500"
+                  style={{ width: `${heroImageTaille}%`, maxWidth: '100%' }}
+                >
                   <img
                     src={heroImageUrl}
                     alt="Hindo Digital"

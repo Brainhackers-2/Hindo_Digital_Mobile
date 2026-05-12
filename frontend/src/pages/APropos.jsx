@@ -63,8 +63,8 @@ const CIBLES = [
 ]
 
 const APropos = () => {
-  const { c }            = useContenu()
-  const { teamImageUrl } = useSiteSettings()
+  const { c }                                      = useContenu()
+  const { teamImageUrl, teamImageTaille = 100 }    = useSiteSettings()
   return (
     <>
       {/* ---- En-tête de page ---- */}
@@ -123,8 +123,11 @@ const APropos = () => {
               className="relative"
             >
               {teamImageUrl ? (
-                /* ---- Photo réelle de l'équipe ---- */
-                <div className="aspect-video rounded-2xl overflow-hidden shadow-xl">
+                /* ---- Photo réelle — taille contrôlée par l'admin ---- */
+                <div
+                  className="rounded-2xl overflow-hidden shadow-xl transition-all duration-500 mx-auto"
+                  style={{ width: `${teamImageTaille}%` }}
+                >
                   <img
                     src={teamImageUrl}
                     alt="Équipe Hindo Digital"
