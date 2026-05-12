@@ -25,7 +25,15 @@ const AdminLogin = () => {
       await login(form.email, form.password)
       navigate('/admin')
     } catch (err) {
-      setErreur(err.response?.data?.message || 'Identifiants incorrects.')
+      // Supabase retourne err.message (pas err.response.data.message comme Axios)
+      const msg = err.message || ''
+      if (msg.includes('Invalid login credentials')) {
+        setErreur('Email ou mot de passe incorrect.')
+      } else if (msg.includes('Email not confirmed')) {
+        setErreur('Email non confirmé. Vérifiez votre boîte mail ou désactivez la confirmation dans Supabase.')
+      } else {
+        setErreur(msg || 'Erreur de connexion. Vérifiez vos identifiants.')
+      }
     } finally {
       setLoading(false)
     }
