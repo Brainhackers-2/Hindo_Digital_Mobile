@@ -15,7 +15,8 @@ import SectionHeader    from '../components/SectionHeader'
 import ServiceCard      from '../components/ServiceCard'
 import StatCard         from '../components/StatCard'
 import LoadingSpinner   from '../components/LoadingSpinner'
-import useFetch         from '../hooks/useFetch'
+import useFetch          from '../hooks/useFetch'
+import useFetchRealtime   from '../hooks/useFetchRealtime'
 import { getServices }    from '../services/servicesApi'
 import { getTemoignages } from '../services/contactApi'
 import { useContenu }     from '../context/ContenuContext'
@@ -46,8 +47,9 @@ const ARGUMENTS = [
 ]
 
 const Accueil = () => {
-  const { data: services, loading: loadingServices } = useFetch(getServices)
-  const { data: temoignages, loading: loadingTemo }  = useFetch(getTemoignages)
+  // useFetchRealtime : recharge automatiquement si la table change (image ajoutée en admin)
+  const { data: services, loading: loadingServices } = useFetchRealtime(getServices, 'services')
+  const { data: temoignages, loading: loadingTemo }  = useFetchRealtime(getTemoignages, 'temoignages')
   const { c } = useContenu()
 
   // Stats et arguments construits dynamiquement depuis le CMS

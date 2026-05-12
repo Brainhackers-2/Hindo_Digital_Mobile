@@ -14,8 +14,8 @@ import { FaWhatsapp } from 'react-icons/fa'
 
 import SectionHeader  from '../components/SectionHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
-import useFetch       from '../hooks/useFetch'
-import { getServices } from '../services/servicesApi'
+import useFetchRealtime from '../hooks/useFetchRealtime'
+import { getServices }   from '../services/servicesApi'
 
 // Correspondance icône → composant (identique aux seeders)
 const ICONES_MAP = {
@@ -112,7 +112,7 @@ const SERVICES_OFFICIELS = [
 ]
 
 const Services = () => {
-  const { data: services, loading, error } = useFetch(getServices)
+  const { data: services, loading, error } = useFetchRealtime(getServices, 'services')
 
   // Fusionne les données API avec les détails étendus locaux
   const liste = (services || SERVICES_OFFICIELS).map((srv) => {

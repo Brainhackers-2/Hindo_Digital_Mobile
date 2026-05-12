@@ -172,6 +172,10 @@ ON CONFLICT DO NOTHING;
 -- Nécessaire pour que les changements admin s'affichent immédiatement
 -- ============================================================
 ALTER PUBLICATION supabase_realtime ADD TABLE settings;
+ALTER PUBLICATION supabase_realtime ADD TABLE services;
+ALTER PUBLICATION supabase_realtime ADD TABLE realisations;
+ALTER PUBLICATION supabase_realtime ADD TABLE temoignages;
+ALTER PUBLICATION supabase_realtime ADD TABLE videos;
 
 -- ============================================================
 -- STORAGE POLICIES — Permissions d'upload pour les admins
