@@ -13,8 +13,17 @@ const publicUrl = (path) =>
 const uploadFile = async (bucket, folder, file) => {
   const ext  = file.name.split('.').pop()
   const path = `${folder}/${Date.now()}.${ext}`
-  const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true })
-  if (error) throw error
+  const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true })
+  if (error) {
+    // Messages d'erreur clairs selon la cause
+    if (error.message?.includes('Bucket not found') || error.statusCode === '404') {
+      throw new Error(`Bucket "${bucket}" introuvable — créez-le dans Supabase → Storage → New bucket (Public)`)
+    }
+    if (error.message?.includes('row-level security') || error.statusCode === '403') {
+      throw new Error(`Permissions insuffisantes — exécutez le SQL des policies Storage dans Supabase`)
+    }
+    throw new Error(`Upload échoué : ${error.message}`)
+  }
   return path
 }
 

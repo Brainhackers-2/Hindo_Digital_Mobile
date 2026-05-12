@@ -174,6 +174,31 @@ ON CONFLICT DO NOTHING;
 ALTER PUBLICATION supabase_realtime ADD TABLE settings;
 
 -- ============================================================
+-- STORAGE POLICIES — Permissions d'upload pour les admins
+-- Exécuter APRÈS avoir créé le bucket "hindo-media" (Public)
+-- ============================================================
+
+-- Lecture publique de tous les fichiers du bucket
+CREATE POLICY "Lecture publique hindo-media"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'hindo-media');
+
+-- Upload autorisé pour les utilisateurs connectés (admins)
+CREATE POLICY "Admin peut uploader"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'hindo-media' AND auth.role() = 'authenticated');
+
+-- Modification autorisée pour les admins
+CREATE POLICY "Admin peut modifier fichier"
+  ON storage.objects FOR UPDATE
+  USING (bucket_id = 'hindo-media' AND auth.role() = 'authenticated');
+
+-- Suppression autorisée pour les admins
+CREATE POLICY "Admin peut supprimer fichier"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'hindo-media' AND auth.role() = 'authenticated');
+
+-- ============================================================
 -- STORAGE — Bucket pour les fichiers (images, vidéos, logos)
 -- À créer dans : Supabase Dashboard → Storage → New bucket
 -- Nom : hindo-media | Public : OUI
