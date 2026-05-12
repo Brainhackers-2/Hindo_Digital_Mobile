@@ -70,13 +70,13 @@ const AdminContenu = () => {
   const [saving, setSaving]           = useState(false)
   const [message, setMessage]         = useState(null)
 
-  // Charge le contenu actuel depuis l'API admin
   const charger = async () => {
     setLoading(true)
     try {
       const res = await adminApi.get('/admin/contenu')
       setValeurs({ ...DEFAUTS, ...res.data?.data })
-    } catch {
+    } catch (err) {
+      console.error('[AdminContenu] Erreur chargement:', err)
       setValeurs(DEFAUTS)
     } finally {
       setLoading(false)
@@ -95,11 +95,16 @@ const AdminContenu = () => {
     setMessage(null)
     try {
       await adminApi.post('/admin/contenu', { contenu: valeurs })
-      // Recharge le ContenuContext → toutes les pages du site voient les nouveaux textes
       await rafraichir()
-      setMessage({ type: 'success', texte: 'Contenu sauvegardé et appliqué sur le site !' })
+      // Recharge aussi les valeurs locales pour refléter ce qui est en base
+      await charger()
+      setMessage({ type: 'success', texte: '✓ Contenu sauvegardé et appliqué sur le site !' })
     } catch (err) {
-      setMessage({ type: 'error', texte: `Erreur : ${err?.message || 'Réessayez.'}` })
+      console.error('[AdminContenu] Erreur sauvegarde:', err)
+      setMessage({
+        type: 'error',
+        texte: `Erreur : ${err?.message || 'Vérifiez que vous êtes connecté et que les tables Supabase existent.'}`,
+      })
     } finally {
       setSaving(false)
     }

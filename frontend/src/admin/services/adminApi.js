@@ -314,9 +314,23 @@ export const getContenu = async () => {
 }
 
 export const sauvegarderContenu = async (contenu) => {
-  const rows = Object.entries(contenu).map(([key, value]) => ({ key, value }))
+  // Vérifie que l'utilisateur est bien authentifié avant de sauvegarder
+  const { data: session } = await supabase.auth.getSession()
+  if (!session?.session) {
+    throw new Error('Non authentifié — reconnectez-vous à l\'admin.')
+  }
+
+  // Ne sauvegarde que les clés qui ont une valeur (ignore les undefined)
+  const rows = Object.entries(contenu)
+    .filter(([, val]) => val !== undefined)
+    .map(([key, value]) => ({ key, value: value === null ? null : String(value) }))
+
   const { error } = await supabase.from('settings').upsert(rows, { onConflict: 'key' })
-  if (error) throw error
+
+  if (error) {
+    console.error('[Supabase] Erreur sauvegarde settings:', error)
+    throw new Error(`Erreur Supabase: ${error.message} (code: ${error.code})`)
+  }
 }
 
 // ---- Helpers privés ----
@@ -367,8 +381,15 @@ async function routerGet(path) {
 }
 
 async function routerPost(path, data) {
-  // Les pages admin appellent encore adminApi.post pour certaines opérations
-  if (path === '/admin/contenu') { await sauvegarderContenu(data?.contenu || data); return { data: { success: true } } }
+  if (path === '/admin/contenu') {
+    try {
+      await sauvegarderContenu(data?.contenu || data)
+      return { data: { success: true } }
+    } catch (err) {
+      // Relance l'erreur pour qu'AdminContenu puisse l'afficher
+      throw new Error(err.message || 'Échec de la sauvegarde Supabase')
+    }
+  }
   return { data: { success: true } }
 }
 async function routerPut()   { return { data: { success: true } } }
