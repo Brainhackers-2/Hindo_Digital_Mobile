@@ -29,7 +29,19 @@ export const SiteSettingsProvider = ({ children }) => {
     }
   }, [])
 
-  useEffect(() => { chargerSettings() }, [chargerSettings])
+  useEffect(() => {
+    chargerSettings()
+
+    // Temps réel : logo et photo équipe se mettent à jour automatiquement
+    const canal = supabase
+      .channel('settings-logo-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => {
+        chargerSettings()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(canal) }
+  }, [chargerSettings])
 
   return (
     <SiteSettingsContext.Provider value={{ logoUrl, teamImageUrl, loading, rafraichir: chargerSettings }}>

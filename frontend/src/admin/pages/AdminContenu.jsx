@@ -11,7 +11,7 @@ import {
 } from 'react-icons/hi'
 import AdminLayout from '../layout/AdminLayout'
 import adminApi   from '../services/adminApi'
-import { DEFAUTS } from '../../context/ContenuContext'
+import { DEFAUTS, useContenu } from '../../context/ContenuContext'
 
 // ---- Onglets du CMS ----
 const ONGLETS = [
@@ -63,11 +63,12 @@ const Section = ({ titre, children }) => (
 )
 
 const AdminContenu = () => {
+  const { rafraichir } = useContenu() // Pour recharger le contenu sur tout le site après save
   const [ongletActif, setOngletActif] = useState('general')
   const [valeurs, setValeurs]         = useState({})
   const [loading, setLoading]         = useState(true)
   const [saving, setSaving]           = useState(false)
-  const [message, setMessage]         = useState(null) // { type, texte }
+  const [message, setMessage]         = useState(null)
 
   // Charge le contenu actuel depuis l'API admin
   const charger = async () => {
@@ -94,9 +95,11 @@ const AdminContenu = () => {
     setMessage(null)
     try {
       await adminApi.post('/admin/contenu', { contenu: valeurs })
-      setMessage({ type: 'success', texte: 'Contenu sauvegardé ! Les modifications sont visibles sur le site.' })
-    } catch {
-      setMessage({ type: 'error', texte: 'Erreur lors de la sauvegarde. Réessayez.' })
+      // Recharge le ContenuContext → toutes les pages du site voient les nouveaux textes
+      await rafraichir()
+      setMessage({ type: 'success', texte: 'Contenu sauvegardé et appliqué sur le site !' })
+    } catch (err) {
+      setMessage({ type: 'error', texte: `Erreur : ${err?.message || 'Réessayez.'}` })
     } finally {
       setSaving(false)
     }

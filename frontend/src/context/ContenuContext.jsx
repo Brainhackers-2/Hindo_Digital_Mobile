@@ -60,7 +60,20 @@ export const ContenuProvider = ({ children }) => {
     }
   }, [])
 
-  useEffect(() => { charger() }, [charger])
+  useEffect(() => {
+    charger()
+
+    // Temps réel Supabase : recharge automatiquement quand la table settings change
+    // Fonctionne sur tous les onglets et appareils connectés
+    const canal = supabase
+      .channel('settings-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => {
+        charger()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(canal) }
+  }, [charger])
 
   const c = (cle) => contenu[cle] ?? DEFAUTS[cle] ?? ''
 

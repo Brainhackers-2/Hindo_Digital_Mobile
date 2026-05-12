@@ -168,6 +168,12 @@ INSERT INTO temoignages (nom, poste, texte, note, actif) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
+-- REALTIME — Active les mises à jour en temps réel sur settings
+-- Nécessaire pour que les changements admin s'affichent immédiatement
+-- ============================================================
+ALTER PUBLICATION supabase_realtime ADD TABLE settings;
+
+-- ============================================================
 -- STORAGE — Bucket pour les fichiers (images, vidéos, logos)
 -- À créer dans : Supabase Dashboard → Storage → New bucket
 -- Nom : hindo-media | Public : OUI
