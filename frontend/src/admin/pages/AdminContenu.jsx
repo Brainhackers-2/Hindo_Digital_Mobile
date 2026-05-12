@@ -197,7 +197,7 @@ const AdminContenu = () => {
                 <Section titre="Réseaux sociaux (URL complètes)">
                   <Champ label="Facebook"   cle="general_facebook"  valeurs={valeurs} onChange={onChange} />
                   <Champ label="WhatsApp"   cle="general_whatsapp"  valeurs={valeurs} onChange={onChange} aide="wa.me/221..." />
-                  <Champ label="LinkedIn"   cle="general_linkedin"  valeurs={valeurs} onChange={onChange} />
+                  <Champ label="TikTok"    cle="general_tiktok"   valeurs={valeurs} onChange={onChange} aide="tiktok.com/@..." />
                   <Champ label="Instagram"  cle="general_instagram" valeurs={valeurs} onChange={onChange} />
                 </Section>
               </div>

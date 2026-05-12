@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import {
   HiMail, HiPhone, HiLocationMarker, HiCheckCircle, HiGlobe, HiClock
 } from 'react-icons/hi'
-import { FaFacebookF, FaLinkedinIn, FaWhatsapp, FaInstagram } from 'react-icons/fa'
+import { FaFacebookF, FaTiktok, FaWhatsapp, FaInstagram } from 'react-icons/fa'
 
 import SectionHeader from '../components/SectionHeader'
 import FormField     from '../components/FormField'
@@ -230,7 +230,7 @@ const Contact = () => {
                 <div className="flex gap-3">
                   {[
                     { icon: <FaFacebookF />,  href: 'https://facebook.com/hindodigitale',      label: 'Facebook'  },
-                    { icon: <FaLinkedinIn />, href: 'https://linkedin.com/company/hindodigital',label: 'LinkedIn'  },
+                    { icon: <FaTiktok />,     href: 'https://tiktok.com/@hindodigitale',        label: 'TikTok'    },
                     { icon: <FaWhatsapp />,   href: 'https://wa.me/221764043744',              label: 'WhatsApp'  },
                     { icon: <FaInstagram />,  href: 'https://instagram.com/hindodigitale',     label: 'Instagram' },
                   ].map(({ icon, href, label }) => (

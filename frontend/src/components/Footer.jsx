@@ -5,7 +5,7 @@
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FaFacebookF, FaLinkedinIn, FaWhatsapp, FaInstagram } from 'react-icons/fa'
+import { FaFacebookF, FaTiktok, FaWhatsapp, FaInstagram } from 'react-icons/fa'
 import { HiMail, HiPhone, HiLocationMarker, HiGlobe } from 'react-icons/hi'
 import { abonnerNewsletter } from '../services/contactApi'
 import { useSiteSettings } from '../context/SiteSettingsContext'
@@ -48,7 +48,7 @@ const Footer = () => {
           <div className="flex gap-3">
             {[
               { icon: <FaFacebookF />,  href: 'https://facebook.com/hindodigitale',   label: 'Facebook'  },
-              { icon: <FaLinkedinIn />, href: 'https://linkedin.com/company/hindodigital', label: 'LinkedIn' },
+              { icon: <FaTiktok />, href: c('general_tiktok') || 'https://tiktok.com/@hindodigitale', label: 'TikTok' },
               { icon: <FaWhatsapp />,   href: 'https://wa.me/221764043744',            label: 'WhatsApp'  },
               { icon: <FaInstagram />,  href: 'https://instagram.com/hindodigitale',  label: 'Instagram' },
             ].map(({ icon, href, label }) => (
