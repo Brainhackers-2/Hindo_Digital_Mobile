@@ -1,40 +1,40 @@
 // ============================================================
 // components/Navbar.jsx — Barre de navigation principale
-// Navigation responsive avec logo réel Hindo Digital
+// Menu mobile qui se ferme AVANT la navigation (useNavigate)
 // ============================================================
 
-import { useState, useEffect } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HiMenu, HiX } from 'react-icons/hi'
 import { LogoIcon } from './Footer'
 
 const NAV_LINKS = [
-  { path: '/',             label: 'Accueil'      },
-  { path: '/a-propos',    label: 'À propos'     },
-  { path: '/services',    label: 'Services'     },
-  { path: '/realisations',label: 'Réalisations' },
-  { path: '/formation',   label: 'Formation'    },
-  { path: '/contact',     label: 'Contact'      },
+  { path: '/',              label: 'Accueil'      },
+  { path: '/a-propos',     label: 'À propos'     },
+  { path: '/services',     label: 'Services'     },
+  { path: '/realisations', label: 'Réalisations' },
+  { path: '/formation',    label: 'Formation'    },
+  { path: '/contact',      label: 'Contact'      },
 ]
 
 const Navbar = () => {
   const [menuOuvert, setMenuOuvert] = useState(false)
-  const location = useLocation()
+  const navigate  = useNavigate()
+  const location  = useLocation()
 
-  // Ferme le menu automatiquement à chaque changement de page
-  useEffect(() => {
-    setMenuOuvert(false)
-  }, [location.pathname])
-
-  const fermerMenu = () => setMenuOuvert(false)
+  // Ferme le menu PUIS navigue vers la page choisie
+  const allerVers = (path) => {
+    setMenuOuvert(false)          // ferme d'abord le menu
+    navigate(path)                // ensuite navigue
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
       <nav className="container-custom flex items-center justify-between h-16 md:h-20">
 
-        {/* ---- Logo Hindo Digital ---- */}
-        <Link to="/" onClick={fermerMenu} className="flex items-center gap-2.5">
+        {/* ---- Logo ---- */}
+        <button onClick={() => allerVers('/')} className="flex items-center gap-2.5">
           <LogoIcon size={40} />
           <div>
             <span className="font-bold text-xl font-heading text-secondary">
@@ -44,7 +44,7 @@ const Navbar = () => {
               Le Numérique à votre porte
             </p>
           </div>
-        </Link>
+        </button>
 
         {/* ---- Navigation Desktop ---- */}
         <ul className="hidden md:flex items-center gap-1">
@@ -75,42 +75,50 @@ const Navbar = () => {
         <button
           onClick={() => setMenuOuvert(!menuOuvert)}
           className="md:hidden p-2 rounded-lg text-secondary hover:text-primary transition-colors"
-          aria-label="Ouvrir le menu"
+          aria-label={menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
         >
-          {menuOuvert ? <HiX size={24} /> : <HiMenu size={24} />}
+          {menuOuvert ? <HiX size={26} /> : <HiMenu size={26} />}
         </button>
       </nav>
 
-      {/* ---- Menu mobile animé ---- */}
+      {/* ---- Menu mobile ---- */}
       <AnimatePresence>
         {menuOuvert && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="md:hidden bg-white border-t border-gray-100 shadow-lg"
+            transition={{ duration: 0.2 }}
+            className="md:hidden bg-white border-t border-gray-100 shadow-lg overflow-hidden"
           >
             <ul className="container-custom py-4 flex flex-col gap-1">
-              {NAV_LINKS.map(({ path, label }) => (
-                <li key={path}>
-                  <NavLink
-                    to={path}
-                    onClick={fermerMenu}
-                    className={({ isActive }) =>
-                      `block px-4 py-3 rounded-lg font-medium transition-colors ${
-                        isActive ? 'text-primary bg-primary/10' : 'text-secondary hover:text-primary hover:bg-gray-50'
-                      }`
-                    }
-                  >
-                    {label}
-                  </NavLink>
-                </li>
-              ))}
+              {NAV_LINKS.map(({ path, label }) => {
+                const actif = location.pathname === path
+
+                return (
+                  <li key={path}>
+                    <button
+                      onClick={() => allerVers(path)}
+                      className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                        actif
+                          ? 'text-primary bg-primary/10'
+                          : 'text-secondary hover:text-primary hover:bg-gray-50'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  </li>
+                )
+              })}
+
+              {/* Bouton Contact */}
               <li className="mt-2">
-                <Link to="/contact" onClick={fermerMenu} className="btn-primary w-full text-center block">
+                <button
+                  onClick={() => allerVers('/contact')}
+                  className="btn-primary w-full text-center"
+                >
                   Nous contacter
-                </Link>
+                </button>
               </li>
             </ul>
           </motion.div>
