@@ -19,7 +19,8 @@ import useFetch          from '../hooks/useFetch'
 import useFetchRealtime   from '../hooks/useFetchRealtime'
 import { getServices }    from '../services/servicesApi'
 import { getTemoignages } from '../services/contactApi'
-import { useContenu }     from '../context/ContenuContext'
+import { useContenu }      from '../context/ContenuContext'
+import { useSiteSettings } from '../context/SiteSettingsContext'
 
 // ---- Chiffres clés réels ----
 const STATS = [
@@ -47,10 +48,10 @@ const ARGUMENTS = [
 ]
 
 const Accueil = () => {
-  // useFetchRealtime : recharge automatiquement si la table change (image ajoutée en admin)
   const { data: services, loading: loadingServices } = useFetchRealtime(getServices, 'services')
   const { data: temoignages, loading: loadingTemo }  = useFetchRealtime(getTemoignages, 'temoignages')
-  const { c } = useContenu()
+  const { c }            = useContenu()
+  const { heroImageUrl } = useSiteSettings()
 
   // Stats et arguments construits dynamiquement depuis le CMS
   const stats = [
@@ -78,94 +79,140 @@ const Accueil = () => {
           <div className="absolute bottom-20 left-10 w-96 h-96 bg-white rounded-full blur-3xl" />
         </div>
 
-        <div className="container-custom relative z-10 py-24 md:py-32">
-          <div className="max-w-3xl">
-            {/* Badge */}
+        <div className="container-custom relative z-10 py-24 md:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+            {/* ---- COLONNE GAUCHE : Image ---- */}
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 bg-white/10 border border-white/20
-                         text-white px-4 py-2 rounded-full text-sm font-medium mb-8"
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7 }}
+              className="relative flex justify-center"
             >
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              {c('hero_badge')}
+              {heroImageUrl ? (
+                /* Image uploadée depuis l'admin */
+                <div className="relative w-full max-w-lg">
+                  <img
+                    src={heroImageUrl}
+                    alt="Hindo Digital"
+                    className="w-full h-auto rounded-2xl shadow-2xl object-cover"
+                  />
+                  {/* Badge flottant */}
+                  <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-lg px-4 py-3 text-center">
+                    <div className="text-2xl font-bold text-primary font-heading">5+</div>
+                    <div className="text-xs text-gray-500">Ans d'expérience</div>
+                  </div>
+                  <div className="absolute -top-4 -left-4 bg-primary rounded-xl shadow-lg px-4 py-3 text-center">
+                    <div className="text-2xl font-bold text-white font-heading">80+</div>
+                    <div className="text-xs text-white/80">Projets réalisés</div>
+                  </div>
+                </div>
+              ) : (
+                /* Placeholder si pas d'image */
+                <div className="relative w-full max-w-lg aspect-square bg-white/10 border-2 border-white/20
+                                rounded-2xl flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
+                  <div className="text-8xl">🇸🇳</div>
+                  <p className="text-white font-heading font-bold text-2xl">Hindo Digital</p>
+                  <p className="text-white/70 text-sm">Ziguinchor, Sénégal</p>
+                  {/* Indication admin */}
+                  <p className="text-white/40 text-xs text-center px-4 mt-2">
+                    Ajoutez une image depuis<br/>Admin → Logo & Paramètres
+                  </p>
+                  {/* Badges flottants */}
+                  <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-lg px-4 py-3 text-center">
+                    <div className="text-2xl font-bold text-primary font-heading">5+</div>
+                    <div className="text-xs text-gray-500">Ans d'expérience</div>
+                  </div>
+                  <div className="absolute -top-4 -left-4 bg-primary rounded-xl shadow-lg px-4 py-3 text-center">
+                    <div className="text-2xl font-bold text-white font-heading">80+</div>
+                    <div className="text-xs text-white/80">Projets réalisés</div>
+                  </div>
+                </div>
+              )}
             </motion.div>
 
-            {/* Titre */}
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl md:text-6xl lg:text-7xl font-bold text-white font-heading leading-tight mb-6"
-            >
-              {c('hero_titre')} <br />
-            </motion.h1>
-
-            {/* Slogan officiel */}
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-2xl md:text-3xl text-white/90 font-heading font-light mb-6 uppercase tracking-wide"
-            >
-              {c('hero_slogan')}
-            </motion.p>
-
-            {/* Sous-titre */}
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-white/70 text-lg leading-relaxed mb-10 max-w-xl"
-            >
-              {c('hero_sous_titre')}
-            </motion.p>
-
-            {/* CTA buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-wrap gap-4"
-            >
-              <Link to="/contact" className="btn-primary flex items-center gap-2 text-base">
-                Consultation gratuite <HiArrowRight />
-              </Link>
-              <a
-                href="https://wa.me/221764043744"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white
-                           px-6 py-3 rounded-lg font-semibold transition-colors text-base"
+            {/* ---- COLONNE DROITE : Texte ---- */}
+            <div>
+              {/* Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="inline-flex items-center gap-2 bg-white/10 border border-white/20
+                           text-white px-4 py-2 rounded-full text-sm font-medium mb-6"
               >
-                <FaWhatsapp size={20} /> WhatsApp
-              </a>
-              <Link
-                to="/services"
-                className="btn-outline border-white text-white hover:bg-white hover:text-primary text-base"
-              >
-                Nos services
-              </Link>
-            </motion.div>
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                {c('hero_badge')}
+              </motion.div>
 
-            {/* Téléphones rapides */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="mt-8 flex flex-wrap gap-4"
-            >
-              {['+221 76 404 37 44', '+221 78 849 43 63', '+221 78 121 85 95'].map((tel) => (
-                <a
-                  key={tel}
-                  href={`tel:${tel.replace(/\s/g, '')}`}
-                  className="text-white/70 hover:text-white text-sm flex items-center gap-1 transition-colors"
-                >
-                  📞 {tel}
+              {/* Titre */}
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-white font-heading leading-tight mb-4"
+              >
+                {c('hero_titre')}
+              </motion.h1>
+
+              {/* Slogan */}
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-xl md:text-2xl text-white/90 font-heading font-light mb-5 uppercase tracking-wide"
+              >
+                {c('hero_slogan')}
+              </motion.p>
+
+              {/* Sous-titre */}
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="text-white/70 text-base leading-relaxed mb-8"
+              >
+                {c('hero_sous_titre')}
+              </motion.p>
+
+              {/* CTA buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex flex-wrap gap-3"
+              >
+                <Link to="/contact" className="btn-primary flex items-center gap-2">
+                  {c('hero_cta_principal')} <HiArrowRight />
+                </Link>
+                <a href={`https://wa.me/${c('general_whatsapp')?.replace(/\D/g,'') || '221764043744'}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white
+                             px-5 py-3 rounded-lg font-semibold transition-colors">
+                  <FaWhatsapp size={18} /> WhatsApp
                 </a>
-              ))}
-            </motion.div>
+                <Link to="/services"
+                  className="btn-outline border-white text-white hover:bg-white hover:text-primary">
+                  {c('hero_cta_secondaire')}
+                </Link>
+              </motion.div>
+
+              {/* Téléphones */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="mt-6 flex flex-wrap gap-3"
+              >
+                {[c('general_tel1'), c('general_tel2'), c('general_tel3')].filter(Boolean).map((tel) => (
+                  <a key={tel} href={`tel:${tel.replace(/\s/g,'')}`}
+                    className="text-white/60 hover:text-white text-sm flex items-center gap-1 transition-colors">
+                    📞 {tel}
+                  </a>
+                ))}
+              </motion.div>
+            </div>
+
           </div>
         </div>
 

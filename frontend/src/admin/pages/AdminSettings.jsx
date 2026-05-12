@@ -185,7 +185,7 @@ const ZoneUpload = ({
 // Page principale AdminSettings
 // ============================================================
 const AdminSettings = () => {
-  const { rafraichir, logoUrl, teamImageUrl } = useSiteSettings()
+  const { rafraichir, logoUrl, teamImageUrl, heroImageUrl } = useSiteSettings()
   const { data, refetch } = useFetch(() => adminApi.get('/admin/settings'))
 
   const handleSuccess = () => { refetch(); rafraichir() }
@@ -223,7 +223,20 @@ const AdminSettings = () => {
           accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
         />
 
-        {/* ---- Section 2 : Photo de l'équipe ---- */}
+        {/* ---- Section 2 : Image Hero (page d'accueil) ---- */}
+        <ZoneUpload
+          titre="Image Hero — Page d'accueil (côté gauche)"
+          description="Grande image affichée à gauche dans la section principale de la page d'accueil."
+          conseil="JPG ou PNG — dimensions recommandées 600×600 px — max 5 Mo"
+          imageActuelle={heroImageUrl}
+          labelBoutonSauvegarder="Mettre cette image sur la page d'accueil"
+          endpoint="/admin/settings/hero-image"
+          endpointDelete="/admin/settings/hero-image"
+          fieldName="image"
+          onSuccess={handleSuccess}
+        />
+
+        {/* ---- Section 3 : Photo de l'équipe ---- */}
         <ZoneUpload
           titre="Photo de l'équipe fondatrice"
           description="Affichée dans la page À propos, à côté de la présentation de l'entreprise."

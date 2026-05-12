@@ -1,5 +1,5 @@
 // ============================================================
-// context/SiteSettingsContext.jsx — Logo et photo équipe via Supabase
+// context/SiteSettingsContext.jsx — Logo, photo équipe et image hero
 // ============================================================
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
@@ -11,9 +11,10 @@ const publicUrl = (path) =>
   path ? supabase.storage.from('hindo-media').getPublicUrl(path).data.publicUrl : null
 
 export const SiteSettingsProvider = ({ children }) => {
-  const [logoUrl,      setLogoUrl]      = useState(null)
-  const [teamImageUrl, setTeamImageUrl] = useState(null)
-  const [loading,      setLoading]      = useState(true)
+  const [logoUrl,       setLogoUrl]       = useState(null)
+  const [teamImageUrl,  setTeamImageUrl]  = useState(null)
+  const [heroImageUrl,  setHeroImageUrl]  = useState(null) // Image hero section accueil
+  const [loading,       setLoading]       = useState(true)
 
   const chargerSettings = useCallback(async () => {
     try {
@@ -22,8 +23,9 @@ export const SiteSettingsProvider = ({ children }) => {
       ;(data || []).forEach(row => { map[row.key] = row.value })
       setLogoUrl(publicUrl(map.logo_path))
       setTeamImageUrl(publicUrl(map.team_image_path))
+      setHeroImageUrl(publicUrl(map.hero_image_path))
     } catch {
-      setLogoUrl(null); setTeamImageUrl(null)
+      setLogoUrl(null); setTeamImageUrl(null); setHeroImageUrl(null)
     } finally {
       setLoading(false)
     }
@@ -31,20 +33,17 @@ export const SiteSettingsProvider = ({ children }) => {
 
   useEffect(() => {
     chargerSettings()
-
-    // Temps réel : logo et photo équipe se mettent à jour automatiquement
     const canal = supabase
       .channel('settings-logo-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => {
         chargerSettings()
       })
       .subscribe()
-
     return () => { supabase.removeChannel(canal) }
   }, [chargerSettings])
 
   return (
-    <SiteSettingsContext.Provider value={{ logoUrl, teamImageUrl, loading, rafraichir: chargerSettings }}>
+    <SiteSettingsContext.Provider value={{ logoUrl, teamImageUrl, heroImageUrl, loading, rafraichir: chargerSettings }}>
       {children}
     </SiteSettingsContext.Provider>
   )

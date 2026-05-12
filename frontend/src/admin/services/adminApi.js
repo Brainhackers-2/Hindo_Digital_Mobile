@@ -278,12 +278,30 @@ export const toggleVideoActif = async (id, actifActuel) => {
   await supabase.from('videos').update({ actif: !actifActuel }).eq('id', id)
 }
 
-// ---- SETTINGS (Logo + Photo équipe) ----
+// ---- SETTINGS (Logo + Photo équipe + Image Hero) ----
 export const getSettings = async () => {
   const { data } = await supabase.from('settings').select('key, value')
   const map = {}
   ;(data || []).forEach(row => { map[row.key] = row.value })
-  return wrap({ logo_url: publicUrl(map.logo_path), team_image_url: publicUrl(map.team_image_path) })
+  return wrap({
+    logo_url:        publicUrl(map.logo_path),
+    team_image_url:  publicUrl(map.team_image_path),
+    hero_image_url:  publicUrl(map.hero_image_path),
+  })
+}
+
+export const uploadHeroImage = async (fichier) => {
+  const { data: ancienData } = await supabase.from('settings').select('value').eq('key', 'hero_image_path').maybeSingle()
+  await deleteFile(ancienData?.value)
+  const path = await uploadFile('hindo-media', 'hero', fichier)
+  await supabase.from('settings').upsert({ key: 'hero_image_path', value: path })
+  return publicUrl(path)
+}
+
+export const deleteHeroImage = async () => {
+  const { data } = await supabase.from('settings').select('value').eq('key', 'hero_image_path').maybeSingle()
+  await deleteFile(data?.value)
+  await supabase.from('settings').upsert({ key: 'hero_image_path', value: null })
 }
 
 export const uploadLogo = async (fichier) => {
@@ -433,6 +451,12 @@ async function routerPost(path, data) {
     const url = await uploadTeamImage(file)
     return ok({ team_image_url: url })
   }
+  if (path === '/admin/settings/hero-image') {
+    const file = data instanceof FormData ? data.get('image') : null
+    if (!file) err('Aucun fichier image fourni')
+    const url = await uploadHeroImage(file)
+    return ok({ hero_image_url: url })
+  }
 
   // Création service
   if (path === '/admin/services') {
@@ -523,8 +547,9 @@ async function routerPatch(path) {
 // ---- DELETE ----
 async function routerDelete(path) {
   // Logo et photo équipe
-  if (path === '/admin/settings/logo')       { await deleteLogo();      return ok() }
-  if (path === '/admin/settings/team-image') { await deleteTeamImage(); return ok() }
+  if (path === '/admin/settings/logo')        { await deleteLogo();       return ok() }
+  if (path === '/admin/settings/team-image')  { await deleteTeamImage();  return ok() }
+  if (path === '/admin/settings/hero-image')  { await deleteHeroImage();  return ok() }
 
   // Image d'un service seul
   const svcImgM = path.match(/^\/admin\/services\/(\d+)\/image$/)
