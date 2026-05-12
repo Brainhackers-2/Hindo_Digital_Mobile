@@ -355,16 +355,33 @@ function enrichirVideo(v) {
   return { ...v, embed_url, url_lecture, est_fichier_local: !!v.video_file_path }
 }
 
-// ---- Objet compatible avec l'ancien adminApi (pour les pages qui font adminApi.get/post) ----
-const adminApi = {
-  get:    (path) => routerGet(path),
-  post:   (path, data, config) => routerPost(path, data, config),
-  put:    (path, data) => routerPut(path, data),
-  patch:  (path) => routerPatch(path),
-  delete: (path) => routerDelete(path),
+// ============================================================
+// Routeur de compatibilité — remplace les appels Axios vers Laravel
+// Chaque adminApi.get/post/put/patch/delete appelle la bonne fonction Supabase
+// ============================================================
+
+// Convertit un FormData en objet JS simple (sans les fichiers File)
+function fdToObj(data) {
+  if (!(data instanceof FormData)) return data || {}
+  const obj = {}
+  for (const [key, value] of data.entries()) {
+    if (!(value instanceof File)) obj[key] = value
+  }
+  return obj
 }
 
-// Routeur minimal pour la compatibilité avec les pages admin existantes
+const ok  = (data = null) => ({ data: { data, success: true } })
+const err = (msg) => { throw new Error(msg) }
+
+const adminApi = {
+  get:    (path)        => routerGet(path),
+  post:   (path, data)  => routerPost(path, data),
+  put:    (path, data)  => routerPut(path, data),
+  patch:  (path)        => routerPatch(path),
+  delete: (path)        => routerDelete(path),
+}
+
+// ---- GET ----
 async function routerGet(path) {
   if (path === '/admin/dashboard')    return getDashboard()
   if (path === '/admin/contacts')     return getContacts()
@@ -377,27 +394,178 @@ async function routerGet(path) {
   if (path === '/admin/videos')       return getVideosAdmin()
   if (path === '/admin/settings')     return getSettings()
   if (path === '/admin/contenu')      return getContenu()
-  throw new Error(`Route inconnue: ${path}`)
+  throw new Error(`[adminApi] Route GET inconnue: ${path}`)
 }
 
+// ---- POST ----
 async function routerPost(path, data) {
+  const form = fdToObj(data)
+
+  // Contenu CMS
   if (path === '/admin/contenu') {
     try {
       await sauvegarderContenu(data?.contenu || data)
-      return { data: { success: true } }
-    } catch (err) {
-      // Relance l'erreur pour qu'AdminContenu puisse l'afficher
-      throw new Error(err.message || 'Échec de la sauvegarde Supabase')
-    }
+      return ok()
+    } catch (e) { throw new Error(e.message) }
   }
-  return { data: { success: true } }
+
+  // Logo du site
+  if (path === '/admin/settings/logo') {
+    const file = data instanceof FormData ? data.get('logo') : null
+    if (!file) err('Aucun fichier logo fourni')
+    const url = await uploadLogo(file)
+    return ok({ logo_url: url })
+  }
+
+  // Photo équipe
+  if (path === '/admin/settings/team-image') {
+    const file = data instanceof FormData ? data.get('image') : null
+    if (!file) err('Aucun fichier image fourni')
+    const url = await uploadTeamImage(file)
+    return ok({ team_image_url: url })
+  }
+
+  // Création service
+  if (path === '/admin/services') {
+    const imageFile = data instanceof FormData ? data.get('image') : null
+    const service = await creerService(form, imageFile instanceof File ? imageFile : null)
+    return ok(service)
+  }
+
+  // Modification service : /admin/services/123
+  const serviceM = path.match(/^\/admin\/services\/(\d+)$/)
+  if (serviceM) {
+    const imageFile = data instanceof FormData ? data.get('image') : null
+    const { data: s } = await supabase.from('services').select('image_path').eq('id', serviceM[1]).maybeSingle()
+    const service = await modifierService(serviceM[1], form, imageFile instanceof File ? imageFile : null, s?.image_path)
+    return ok(service)
+  }
+
+  // Création réalisation
+  if (path === '/admin/realisations') {
+    const imageFile = data instanceof FormData ? data.get('image') : null
+    const real = await creerRealisation(form, imageFile instanceof File ? imageFile : null)
+    return ok(real)
+  }
+
+  // Modification réalisation : /admin/realisations/123
+  const realM = path.match(/^\/admin\/realisations\/(\d+)$/)
+  if (realM) {
+    const imageFile = data instanceof FormData ? data.get('image') : null
+    const { data: r } = await supabase.from('realisations').select('image_path').eq('id', realM[1]).maybeSingle()
+    const real = await modifierRealisation(realM[1], form, imageFile instanceof File ? imageFile : null, r?.image_path)
+    return ok(real)
+  }
+
+  // Création vidéo
+  if (path === '/admin/videos') {
+    const videoFile = data instanceof FormData ? data.get('video_file') : null
+    const video = await creerVideo(form, videoFile instanceof File ? videoFile : null)
+    return ok(video)
+  }
+
+  // Modification vidéo : /admin/videos/123
+  const videoM = path.match(/^\/admin\/videos\/(\d+)$/)
+  if (videoM) {
+    const videoFile = data instanceof FormData ? data.get('video_file') : null
+    const { data: v } = await supabase.from('videos').select('video_file_path').eq('id', videoM[1]).maybeSingle()
+    const video = await modifierVideo(videoM[1], form, videoFile instanceof File ? videoFile : null, v?.video_file_path)
+    return ok(video)
+  }
+
+  // Formations
+  if (path === '/admin/formations') {
+    const f = await creerFormation(form)
+    return ok(f)
+  }
+  // Témoignages
+  if (path === '/admin/temoignages') {
+    const t = await creerTemoignage(form)
+    return ok(t)
+  }
+
+  return ok()
 }
-async function routerPut()   { return { data: { success: true } } }
-async function routerPatch() { return { data: { success: true } } }
+
+// ---- PUT ----
+async function routerPut(path, data) {
+  const formationM = path.match(/^\/admin\/formations\/(\d+)$/)
+  if (formationM) return ok(await modifierFormation(formationM[1], data))
+
+  const temoignageM = path.match(/^\/admin\/temoignages\/(\d+)$/)
+  if (temoignageM) return ok(await modifierTemoignage(temoignageM[1], data))
+
+  const serviceM = path.match(/^\/admin\/services\/(\d+)$/)
+  if (serviceM) {
+    const { data: s } = await supabase.from('services').select('image_path').eq('id', serviceM[1]).maybeSingle()
+    return ok(await modifierService(serviceM[1], data, null, s?.image_path))
+  }
+
+  return ok()
+}
+
+// ---- PATCH ----
+async function routerPatch(path) {
+  const contactM = path.match(/^\/admin\/contacts\/(\d+)\/lu$/)
+  if (contactM) { await marquerContactLu(contactM[1]); return ok() }
+  return ok()
+}
+
+// ---- DELETE ----
 async function routerDelete(path) {
-  if (path === '/admin/settings/logo')       { await deleteLogo();      return { data: { success: true } } }
-  if (path === '/admin/settings/team-image') { await deleteTeamImage(); return { data: { success: true } } }
-  return { data: { success: true } }
+  // Logo et photo équipe
+  if (path === '/admin/settings/logo')       { await deleteLogo();      return ok() }
+  if (path === '/admin/settings/team-image') { await deleteTeamImage(); return ok() }
+
+  // Image d'un service seul
+  const svcImgM = path.match(/^\/admin\/services\/(\d+)\/image$/)
+  if (svcImgM) {
+    const { data: s } = await supabase.from('services').select('image_path').eq('id', svcImgM[1]).maybeSingle()
+    await supprimerServiceImage(svcImgM[1], s?.image_path)
+    return ok()
+  }
+
+  // Service complet
+  const svcM = path.match(/^\/admin\/services\/(\d+)$/)
+  if (svcM) {
+    const { data: s } = await supabase.from('services').select('image_path').eq('id', svcM[1]).maybeSingle()
+    await supprimerService(svcM[1], s?.image_path)
+    return ok()
+  }
+
+  // Réalisation
+  const realM = path.match(/^\/admin\/realisations\/(\d+)$/)
+  if (realM) {
+    const { data: r } = await supabase.from('realisations').select('image_path').eq('id', realM[1]).maybeSingle()
+    await supprimerRealisation(realM[1], r?.image_path)
+    return ok()
+  }
+
+  // Vidéo
+  const videoM = path.match(/^\/admin\/videos\/(\d+)$/)
+  if (videoM) {
+    const { data: v } = await supabase.from('videos').select('video_file_path').eq('id', videoM[1]).maybeSingle()
+    await supprimerVideo(videoM[1], v?.video_file_path)
+    return ok()
+  }
+
+  // Formation
+  const formM = path.match(/^\/admin\/formations\/(\d+)$/)
+  if (formM) { await supprimerFormation(formM[1]); return ok() }
+
+  // Témoignage
+  const temoM = path.match(/^\/admin\/temoignages\/(\d+)$/)
+  if (temoM) { await supprimerTemoignage(temoM[1]); return ok() }
+
+  // Inscription
+  const inscrM = path.match(/^\/admin\/inscriptions\/(\d+)$/)
+  if (inscrM) { await supprimerInscription(inscrM[1]); return ok() }
+
+  // Contact
+  const contM = path.match(/^\/admin\/contacts\/(\d+)$/)
+  if (contM) { await supprimerContact(contM[1]); return ok() }
+
+  return ok()
 }
 
 export default adminApi
