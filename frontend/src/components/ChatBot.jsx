@@ -8,33 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { HiX, HiPaperAirplane, HiRefresh } from 'react-icons/hi'
 import { RiRobot2Line } from 'react-icons/ri'
 
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`
-
-// Contexte Hindo Digital — donné à Gemini en arrière-plan
-// Gemini garde son intelligence complète et répond à TOUT
-const CONTEXTE_HINDO = `Tu es un assistant IA puissant et intelligent intégré sur le site web de Hindo Digital.
-
-Hindo Digital est une entreprise sénégalaise de services numériques basée à Ziguinchor.
-Slogan : "Le Numérique à votre porte"
-Contact : hindodigitale@gmail.com | +221 76 404 37 44 | +221 78 849 43 63 | +221 78 121 85 95
-WhatsApp : +221 76 404 37 44
-Horaires : Lun-Ven 08h-18h | Sam 09h-14h | Dim Fermé
-
-Services proposés :
-- Réseaux & Systèmes (LAN/WAN, Cloud, sécurité informatique)
-- Sécurité & Vidéosurveillance (caméras IP, alarmes, contrôle d'accès)
-- Développement Web & Mobile (sites, apps, e-commerce)
-- Formation Informatique (bureautique, réseaux, dev web)
-- Infographie (logo, charte graphique, communication visuelle)
-
-Règles :
-- Réponds en français par défaut, dans la langue de l'utilisateur si différente
-- Tu peux répondre à TOUTES les questions, pas seulement celles sur Hindo Digital
-- Sois naturel, intelligent et utile comme un vrai assistant IA
-- Pour les demandes de devis, donner le contact Hindo Digital
-- Pas de limite sur les sujets`
-
 // Message de bienvenue (affiché visuellement, NON envoyé à l'API)
 const MSG_BIENVENUE = {
   id: 0,
@@ -81,77 +54,30 @@ const ChatBot = () => {
     setSaisie('')
     setErreur(null)
 
-    // Ajoute le message utilisateur dans l'UI
     const idUser  = Date.now()
     const msgUser = { id: idUser, role: 'user', texte: msg }
     setMessages(prev => [...prev, msgUser])
     setChargement(true)
 
     try {
-      if (!GEMINI_KEY) throw new Error('VITE_GEMINI_API_KEY manquante dans .env')
+      // Historique sans le message de bienvenue ni les erreurs UI
+      const historique = [...messages, msgUser]
+        .filter(m => m.id !== 0 && m.role !== 'error')
+        .map(m => ({ role: m.role, texte: m.texte }))
 
-      // ── Construit l'historique Gemini (user/model alternés, commence par user) ──
-      const tousMessages = [...messages, msgUser]
-        .filter(m => m.id !== 0)           // ignore le message de bienvenue visuel
-        .filter(m => m.role !== 'error')   // ignore les messages d'erreur UI
-
-      // Garantit l'alternance stricte user→model→user→model
-      const historique = []
-      for (const m of tousMessages) {
-        const role = m.role === 'user' ? 'user' : 'model'
-        const dernier = historique[historique.length - 1]
-        if (dernier && dernier.role === role) {
-          // Fusionne deux messages consécutifs du même rôle
-          dernier.parts[0].text += '\n' + m.texte
-        } else {
-          historique.push({ role, parts: [{ text: m.texte }] })
-        }
-      }
-
-      // Gemini exige que le dernier message soit "user"
-      if (!historique.length || historique[historique.length - 1].role !== 'user') {
-        throw new Error('Historique invalide — dernier message doit être user')
-      }
-
-      // ── Appel API Gemini 1.5 Flash ──
-      const reponseAPI = await fetch(GEMINI_URL, {
+      const reponseAPI = await fetch('/api/gemini', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: CONTEXTE_HINDO }],
-          },
-          contents: historique,
-          generationConfig: {
-            temperature:     0.7,   // stable et cohérent
-            topP:            0.95,
-            maxOutputTokens: 2048,
-            // Pas de responseMimeType — non supporté par gemini-1.5-flash
-          },
-        }),
+        body:    JSON.stringify({ message: msg, historique }),
       })
 
-      if (!reponseAPI.ok) {
-        let errMsg = `Erreur HTTP ${reponseAPI.status}`
-        try {
-          const errData = await reponseAPI.json()
-          errMsg = errData?.error?.message || errMsg
-        } catch {}
-        throw new Error(errMsg)
-      }
-
-      const data     = await reponseAPI.json()
-      const texteBot = data?.candidates?.[0]?.content?.parts?.[0]?.text
-
-      if (!texteBot) {
-        const raison = data?.candidates?.[0]?.finishReason || 'inconnue'
-        throw new Error(`Pas de réponse (raison: ${raison})`)
-      }
+      const data = await reponseAPI.json()
+      if (!reponseAPI.ok) throw new Error(data.error || `Erreur ${reponseAPI.status}`)
 
       setMessages(prev => [...prev, {
         id:    Date.now(),
         role:  'assistant',
-        texte: texteBot,
+        texte: data.reponse,
       }])
 
       if (!ouvert) setNonLus(n => n + 1)
