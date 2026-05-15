@@ -10,7 +10,8 @@ import { RiRobot2Line } from 'react-icons/ri'
 
 // Clé API Gemini (variable d'environnement Vite)
 const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`
+// gemini-1.5-flash : modèle stable, rapide et gratuit
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`
 
 // Prompt complet — répond à TOUTES les questions + expert Hindo Digital
 const SYSTEM_PROMPT = `Tu es un assistant intelligent et polyvalent intégré sur le site de Hindo Digital, une entreprise sénégalaise de services numériques basée à Ziguinchor.
@@ -105,8 +106,18 @@ const ChatBot = () => {
     setChargement(true)
 
     try {
-      // Construit l'historique au format Gemini (user / model alternés)
-      const contents = nouveaux.map(m => ({
+      // ⚠️ Gemini exige que la conversation commence TOUJOURS par "user"
+      // On filtre le message de bienvenue (role: model) et on garde seulement
+      // les vrais échanges user/model en ordre alterné
+      const echanges = nouveaux.filter(m => m.role === 'user' || m.role === 'model')
+
+      // Construit l'historique valide : commence forcément par user
+      const premierUser = echanges.findIndex(m => m.role === 'user')
+      const contentsValides = premierUser >= 0
+        ? echanges.slice(premierUser)
+        : [{ role: 'user', texte: msg }]
+
+      const contents = contentsValides.map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.texte }],
       }))
@@ -120,7 +131,7 @@ const ChatBot = () => {
           },
           contents,
           generationConfig: {
-            maxOutputTokens: 1024,  // Réponses plus complètes
+            maxOutputTokens: 1024,
             temperature: 0.8,
           },
         }),
@@ -128,20 +139,21 @@ const ChatBot = () => {
 
       if (!response.ok) {
         const err = await response.json()
-        throw new Error(err.error?.message || 'Erreur Gemini')
+        console.error('[ChatBot] Erreur API Gemini:', err)
+        throw new Error(err.error?.message || `Erreur ${response.status}`)
       }
 
       const data = await response.json()
       const reponse = data.candidates?.[0]?.content?.parts?.[0]?.text
 
-      if (!reponse) throw new Error('Réponse vide')
+      if (!reponse) throw new Error('Réponse vide de Gemini')
 
       setMessages(prev => [...prev, { role: 'model', texte: reponse }])
       if (!ouvert) setNonLus(n => n + 1)
 
     } catch (err) {
-      console.error('[ChatBot]', err)
-      setErreur('Désolé, je rencontre une difficulté. Appelez-nous au +221 76 404 37 44 😊')
+      console.error('[ChatBot] Erreur:', err.message)
+      setErreur(`⚠️ ${err.message || 'Erreur inconnue'}. Réessayez ou appelez le +221 76 404 37 44`)
     } finally {
       setChargement(false)
     }
