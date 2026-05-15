@@ -9,7 +9,7 @@ import { HiX, HiPaperAirplane, HiRefresh } from 'react-icons/hi'
 import { RiRobot2Line } from 'react-icons/ri'
 
 const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`
 
 // Contexte Hindo Digital — donné à Gemini en arrière-plan
 // Gemini garde son intelligence complète et répond à TOUT
