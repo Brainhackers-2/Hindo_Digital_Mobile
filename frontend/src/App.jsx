@@ -10,6 +10,7 @@ import Navbar        from './components/Navbar'
 import Footer        from './components/Footer'
 import ScrollToTop   from './components/ScrollToTop'
 import LoadingSpinner from './components/LoadingSpinner'
+import ChatBot       from './components/ChatBot'
 
 // Contextes globaux
 import { AuthAdminProvider, useAuthAdmin } from './admin/context/AuthAdminContext'
@@ -49,6 +50,8 @@ const LayoutPublic = () => (
       <Outlet />
     </main>
     <Footer />
+    {/* Chatbot IA — visible sur toutes les pages publiques */}
+    <ChatBot />
   </>
 )
 
