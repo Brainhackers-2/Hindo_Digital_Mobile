@@ -90,18 +90,30 @@ const ChatBot = () => {
     try {
       if (!GEMINI_KEY) throw new Error('VITE_GEMINI_API_KEY manquante dans .env')
 
-      // Construit l'historique pour Gemini
-      // On ignore MSG_BIENVENUE (id=0) — c'est juste visuel
-      // Gemini exige : user → model → user → model (alternés, commence par user)
-      const historique = [...messages, msgUser]
-        .filter(m => m.id !== 0)            // ignore le message de bienvenue
-        .filter(m => m.role !== 'error')    // ignore les erreurs UI
-        .map(m => ({
-          role:  m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: m.texte }],
-        }))
+      // ── Construit l'historique Gemini (user/model alternés, commence par user) ──
+      const tousMessages = [...messages, msgUser]
+        .filter(m => m.id !== 0)           // ignore le message de bienvenue visuel
+        .filter(m => m.role !== 'error')   // ignore les messages d'erreur UI
 
-      // Gemini 2.5 — appel complet
+      // Garantit l'alternance stricte user→model→user→model
+      const historique = []
+      for (const m of tousMessages) {
+        const role = m.role === 'user' ? 'user' : 'model'
+        const dernier = historique[historique.length - 1]
+        if (dernier && dernier.role === role) {
+          // Fusionne deux messages consécutifs du même rôle
+          dernier.parts[0].text += '\n' + m.texte
+        } else {
+          historique.push({ role, parts: [{ text: m.texte }] })
+        }
+      }
+
+      // Gemini exige que le dernier message soit "user"
+      if (!historique.length || historique[historique.length - 1].role !== 'user') {
+        throw new Error('Historique invalide — dernier message doit être user')
+      }
+
+      // ── Appel API Gemini 1.5 Flash ──
       const reponseAPI = await fetch(GEMINI_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,24 +123,30 @@ const ChatBot = () => {
           },
           contents: historique,
           generationConfig: {
-            temperature:       1,
-            topP:              0.95,
-            maxOutputTokens:   8192,
-            responseMimeType:  'text/plain',
+            temperature:     0.7,   // stable et cohérent
+            topP:            0.95,
+            maxOutputTokens: 2048,
+            // Pas de responseMimeType — non supporté par gemini-1.5-flash
           },
         }),
       })
 
       if (!reponseAPI.ok) {
-        const errData = await reponseAPI.json().catch(() => ({}))
-        const msg = errData?.error?.message || `Erreur HTTP ${reponseAPI.status}`
-        throw new Error(msg)
+        let errMsg = `Erreur HTTP ${reponseAPI.status}`
+        try {
+          const errData = await reponseAPI.json()
+          errMsg = errData?.error?.message || errMsg
+        } catch {}
+        throw new Error(errMsg)
       }
 
       const data     = await reponseAPI.json()
       const texteBot = data?.candidates?.[0]?.content?.parts?.[0]?.text
 
-      if (!texteBot) throw new Error('Réponse vide reçue de Gemini')
+      if (!texteBot) {
+        const raison = data?.candidates?.[0]?.finishReason || 'inconnue'
+        throw new Error(`Pas de réponse (raison: ${raison})`)
+      }
 
       setMessages(prev => [...prev, {
         id:    Date.now(),
@@ -139,7 +157,7 @@ const ChatBot = () => {
       if (!ouvert) setNonLus(n => n + 1)
 
     } catch (e) {
-      console.error('[ChatBot Gemini 2.5]', e.message)
+      console.error('[ChatBot]', e.message)
       setErreur(e.message)
     } finally {
       setChargement(false)
