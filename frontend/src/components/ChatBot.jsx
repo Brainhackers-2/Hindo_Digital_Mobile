@@ -12,14 +12,14 @@ import { RiRobot2Line } from 'react-icons/ri'
 const MSG_BIENVENUE = {
   id: 0,
   role: 'assistant',
-  texte: '👋 Bonjour ! Je suis votre assistant IA.\n\nJe peux répondre à toutes vos questions — sur **Hindo Digital**, le numérique, ou n\'importe quel autre sujet. Comment puis-je vous aider ?',
+  texte: '👋 Bonjour ! Je suis l\'assistant de **Hindo Digital**.\n\nJe peux vous renseigner sur nos services, nos tarifs, nos formations et nos coordonnées. Comment puis-je vous aider ?',
 }
 
 const SUGGESTIONS = [
   'Quels sont vos services ?',
-  'Comment créer un site web ?',
-  'Expliquez-moi l\'intelligence artificielle',
   'Comment vous contacter ?',
+  'Quels sont vos horaires ?',
+  'Je veux un devis',
 ]
 
 const ChatBot = () => {
