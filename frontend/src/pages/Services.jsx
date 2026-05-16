@@ -274,7 +274,7 @@ const Services = () => {
                       Demander un devis <HiArrowRight />
                     </Link>
                     <a
-                      href="https://wa.me/221764043744"
+                      href="https://wa.me/221788494363"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white

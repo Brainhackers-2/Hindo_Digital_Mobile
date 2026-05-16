@@ -49,7 +49,7 @@ const Footer = () => {
             {[
               { icon: <FaFacebookF />,  href: 'https://facebook.com/hindodigitale',   label: 'Facebook'  },
               { icon: <FaTiktok />, href: c('general_tiktok') || 'https://tiktok.com/@hindodigitale', label: 'TikTok' },
-              { icon: <FaWhatsapp />,   href: 'https://wa.me/221764043744',            label: 'WhatsApp'  },
+              { icon: <FaWhatsapp />,   href: 'https://wa.me/221788494363',            label: 'WhatsApp'  },
               { icon: <FaInstagram />,  href: 'https://instagram.com/hindodigitale',  label: 'Instagram' },
             ].map(({ icon, href, label }) => (
               <a

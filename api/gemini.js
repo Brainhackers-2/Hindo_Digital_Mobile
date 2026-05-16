@@ -13,7 +13,7 @@ CONTACT :
 - Téléphone 1 : +221 76 404 37 44
 - Téléphone 2 : +221 78 849 43 63
 - Téléphone 3 : +221 78 121 85 95
-- WhatsApp : +221 76 404 37 44
+- WhatsApp : +221 78 849 43 63
 
 HORAIRES :
 - Lundi - Vendredi : 08h à 18h

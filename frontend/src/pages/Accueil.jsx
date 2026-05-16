@@ -321,7 +321,7 @@ const Accueil = () => {
               <Link to="/contact" className="btn-primary whitespace-nowrap">
                 Nous contacter
               </Link>
-              <a href="https://wa.me/221764043744" target="_blank" rel="noopener noreferrer"
+              <a href="https://wa.me/221788494363" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white
                            px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap">
                 <FaWhatsapp /> WhatsApp
@@ -380,7 +380,7 @@ const Accueil = () => {
                          px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors text-lg">
               Démarrer un projet <HiArrowRight />
             </Link>
-            <a href="https://wa.me/221764043744" target="_blank" rel="noopener noreferrer"
+            <a href="https://wa.me/221788494363" target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white
                          font-bold px-8 py-4 rounded-lg transition-colors text-lg">
               <FaWhatsapp size={22} /> Écrire sur WhatsApp

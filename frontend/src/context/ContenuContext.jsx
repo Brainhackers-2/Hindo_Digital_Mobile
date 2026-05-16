@@ -10,7 +10,7 @@ const DEFAUTS = {
   general_adresse: 'Ziguinchor, Sénégal', general_email: 'hindodigitale@gmail.com',
   general_tel1: '+221 76 404 37 44', general_tel2: '+221 78 849 43 63', general_tel3: '+221 78 121 85 95',
   general_site: 'hindodigitale.com',
-  general_facebook: 'https://facebook.com/hindodigitale', general_whatsapp: 'https://wa.me/221764043744',
+  general_facebook: 'https://facebook.com/hindodigitale', general_whatsapp: 'https://wa.me/221788494363',
   general_tiktok: 'https://tiktok.com/@hindodigitale', general_instagram: 'https://instagram.com/hindodigitale',
   hero_badge: 'Entreprise numérique sénégalaise — Ziguinchor',
   hero_titre: 'Hindo Digital', hero_slogan: 'Le Numérique à votre porte',
