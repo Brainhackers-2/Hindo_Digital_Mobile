@@ -1,11 +1,9 @@
-// api/gemini.js — Proxy serverless Vercel pour Gemini AI
-// Auto-détecte le modèle disponible selon la clé API
+// api/gemini.js — Chatbot Hindo Digital via Groq (LLaMA 3)
+// Groq : gratuit, 14 400 req/jour, ultra-rapide
 
-const CONTEXTE_HINDO = `Tu es l'assistant virtuel officiel de Hindo Digital. Tu réponds UNIQUEMENT aux questions concernant Hindo Digital et ses services. Pour toute autre question (politique, sport, cuisine, etc.), réponds poliment que tu es uniquement là pour aider avec les services de Hindo Digital.
+const CONTEXTE_HINDO = `Tu es l'assistant virtuel officiel de Hindo Digital. Tu réponds UNIQUEMENT aux questions concernant Hindo Digital et ses services. Pour toute autre question, réponds poliment : "Je suis uniquement là pour vous renseigner sur Hindo Digital et ses services. Contactez-nous au +221 76 404 37 44."
 
-══ INFORMATIONS HINDO DIGITAL ══
-
-Entreprise : Hindo Digital
+══ HINDO DIGITAL ══
 Slogan : "Le Numérique à votre porte"
 Localisation : Ziguinchor, Sénégal
 Site web : hindodigitale.com
@@ -23,45 +21,19 @@ HORAIRES :
 - Dimanche : Fermé
 
 NOS 5 SERVICES :
-
-1. RÉSEAUX & SYSTÈMES
-   - Réseaux LAN/WAN, câblage structuré, fibre optique
-   - Administration système Windows & Linux
-   - Sécurité informatique, pare-feu, Cloud, sauvegarde
-
-2. SÉCURITÉ & VIDÉOSURVEILLANCE
-   - Caméras IP HD, alarmes anti-intrusion
-   - Contrôle d'accès biométrique
-   - Surveillance à distance via smartphone
-
-3. DÉVELOPPEMENT WEB & MOBILE
-   - Sites vitrines, boutiques e-commerce
-   - Applications mobiles Android & iOS
-   - Intégration paiement Orange Money / Wave
-
-4. FORMATION INFORMATIQUE
-   - Bureautique (Word, Excel, PowerPoint)
-   - Réseaux, cybersécurité, développement web
-   - Formations en entreprise
-
-5. INFOGRAPHIE & COMMUNICATION
-   - Logos, charte graphique, flyers, affiches
-   - Visuels réseaux sociaux, maquettes UI/UX
+1. RÉSEAUX & SYSTÈMES — LAN/WAN, fibre optique, Cloud, sécurité informatique
+2. SÉCURITÉ & VIDÉOSURVEILLANCE — Caméras IP, alarmes, contrôle d'accès biométrique
+3. DÉVELOPPEMENT WEB & MOBILE — Sites vitrines, e-commerce, apps Android/iOS, Orange Money/Wave
+4. FORMATION INFORMATIQUE — Bureautique, réseaux, cybersécurité, dev web
+5. INFOGRAPHIE & COMMUNICATION — Logos, flyers, visuels réseaux sociaux, UI/UX
 
 CLIENTS : PME, particuliers, institutions, jeunes en formation
 
-══ RÈGLES DE RÉPONSE ══
+RÈGLES :
 - Réponds en français, de façon chaleureuse et professionnelle
-- Réponds UNIQUEMENT aux questions sur Hindo Digital et ses services
-- Si la question ne concerne pas Hindo Digital, dis : "Je suis uniquement là pour vous renseigner sur Hindo Digital et ses services. Pour toute question, contactez-nous au +221 76 404 37 44."
+- Réponds UNIQUEMENT aux questions sur Hindo Digital
 - Pour les devis : inviter à appeler ou écrire à hindodigitale@gmail.com
-- Sois concis (3-4 phrases maximum par réponse)`
-
-// Modèles gratuits confirmés sur AI Studio (pas d'auto-détection)
-const MODELES_GRATUITS = [
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-8b',
-]
+- Sois concis (3-4 phrases maximum)`
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -74,56 +46,50 @@ export default async function handler(req, res) {
   const { message, historique = [] } = req.body || {}
   if (!message?.trim()) return res.status(400).json({ error: 'Message vide' })
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) {
-    return res.status(500).json({ error: 'Clé API manquante — ajoutez GEMINI_API_KEY dans Vercel' })
+    return res.status(500).json({ error: 'Clé API manquante — ajoutez GROQ_API_KEY dans Vercel' })
   }
 
-  // Historique au format Gemini (alternance stricte user/model)
-  const contents = []
-  for (const m of historique) {
-    const role = m.role === 'user' ? 'user' : 'model'
-    const dernier = contents[contents.length - 1]
-    if (dernier && dernier.role === role) {
-      dernier.parts[0].text += '\n' + m.texte
-    } else {
-      contents.push({ role, parts: [{ text: m.texte }] })
+  // Convertit l'historique au format OpenAI/Groq
+  const messages = [
+    { role: 'system', content: CONTEXTE_HINDO },
+    ...historique.map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.texte,
+    })),
+    { role: 'user', content: message.trim() },
+  ]
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages,
+        temperature: 0.5,
+        max_tokens: 512,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('[Groq]', data?.error?.message)
+      return res.status(500).json({ error: data?.error?.message || 'Erreur Groq' })
     }
+
+    const reponse = data.choices?.[0]?.message?.content
+    if (!reponse) return res.status(500).json({ error: 'Pas de réponse' })
+
+    return res.json({ reponse })
+
+  } catch (err) {
+    console.error('[Groq]', err.message)
+    return res.status(500).json({ error: 'Service indisponible' })
   }
-  contents.push({ role: 'user', parts: [{ text: message.trim() }] })
-
-  // Essaie chaque modèle gratuit jusqu'à ce qu'un réponde
-  for (const model of MODELES_GRATUITS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: CONTEXTE_HINDO }] },
-          contents,
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        console.warn(`[Gemini] ${model} échoué:`, data?.error?.message)
-        continue
-      }
-
-      const reponse = data?.candidates?.[0]?.content?.parts?.[0]?.text
-      if (!reponse) continue
-
-      return res.json({ reponse })
-
-    } catch (err) {
-      console.warn(`[Gemini] ${model} erreur réseau:`, err.message)
-    }
-  }
-
-  return res.status(500).json({
-    error: 'Quota Gemini dépassé. Vérifiez votre clé sur aistudio.google.com/apikey et assurez-vous de créer la clé dans un NOUVEAU projet.',
-  })
 }
