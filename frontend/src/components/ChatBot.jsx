@@ -73,9 +73,8 @@ const ChatBot = () => {
 
     rec.onresult = (e) => {
       const texte = e.results[0][0].transcript
-      setSaisie(texte)
       setEnregistrement(false)
-      setTimeout(() => inputRef.current?.focus(), 100)
+      envoyerMessage(texte)
     }
 
     rec.onerror = () => setEnregistrement(false)
@@ -275,7 +274,7 @@ const ChatBot = () => {
                 value={saisie}
                 onChange={e => setSaisie(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) envoyerMessage() }}
-                placeholder={enregistrement ? '🎤 Parlez maintenant...' : 'Votre question...'}
+                placeholder={enregistrement ? '🎤 Parlez, envoi automatique...' : 'Votre question...'}
                 disabled={chargement}
                 className="flex-1 text-sm outline-none bg-gray-50 rounded-xl
                            px-4 py-2.5 border border-gray-200 focus:border-primary
