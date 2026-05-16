@@ -1,14 +1,11 @@
-// ============================================================
-// ChatBot.jsx — Assistant IA Hindo Digital
-// Gemini 2.5 Flash — Intelligence artificielle complète
-// ============================================================
+// ChatBot.jsx — Assistant IA Hindo Digital (Groq / LLaMA 3)
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HiX, HiPaperAirplane, HiRefresh } from 'react-icons/hi'
+import { HiMicrophone, HiStop } from 'react-icons/hi2'
 import { RiRobot2Line } from 'react-icons/ri'
 
-// Message de bienvenue (affiché visuellement, NON envoyé à l'API)
 const MSG_BIENVENUE = {
   id: 0,
   role: 'assistant',
@@ -23,29 +20,72 @@ const SUGGESTIONS = [
 ]
 
 const ChatBot = () => {
-  const [ouvert, setOuvert]         = useState(false)
-  const [messages, setMessages]     = useState([MSG_BIENVENUE])
-  const [saisie, setSaisie]         = useState('')
-  const [chargement, setChargement] = useState(false)
-  const [erreur, setErreur]         = useState(null)
-  const [nonLus, setNonLus]         = useState(0)
-  const messagesRef                 = useRef(null)
-  const inputRef                    = useRef(null)
+  const [ouvert, setOuvert]               = useState(false)
+  const [messages, setMessages]           = useState([MSG_BIENVENUE])
+  const [saisie, setSaisie]               = useState('')
+  const [chargement, setChargement]       = useState(false)
+  const [erreur, setErreur]               = useState(null)
+  const [nonLus, setNonLus]               = useState(0)
+  const [enregistrement, setEnregistrement] = useState(false)
+  const messagesRef   = useRef(null)
+  const inputRef      = useRef(null)
+  const recognitionRef = useRef(null)
 
-  // Auto-scroll vers le bas
   useEffect(() => {
     if (messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight
     }
   }, [messages, chargement])
 
-  // Focus à l'ouverture
   useEffect(() => {
     if (ouvert) {
       setNonLus(0)
       setTimeout(() => inputRef.current?.focus(), 300)
+    } else {
+      // Arrête l'enregistrement si on ferme le chat
+      recognitionRef.current?.stop()
+      setEnregistrement(false)
     }
   }, [ouvert])
+
+  // Nettoyage à la destruction du composant
+  useEffect(() => {
+    return () => recognitionRef.current?.stop()
+  }, [])
+
+  const toggleVocal = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setErreur('La reconnaissance vocale n\'est pas supportée par votre navigateur.')
+      return
+    }
+
+    if (enregistrement) {
+      recognitionRef.current?.stop()
+      setEnregistrement(false)
+      return
+    }
+
+    const rec = new SpeechRecognition()
+    rec.lang = 'fr-FR'
+    rec.interimResults = false
+    rec.maxAlternatives = 1
+
+    rec.onresult = (e) => {
+      const texte = e.results[0][0].transcript
+      setSaisie(texte)
+      setEnregistrement(false)
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
+
+    rec.onerror = () => setEnregistrement(false)
+    rec.onend   = () => setEnregistrement(false)
+
+    recognitionRef.current = rec
+    rec.start()
+    setEnregistrement(true)
+    setErreur(null)
+  }, [enregistrement])
 
   const envoyerMessage = async (texteForce) => {
     const msg = (texteForce || saisie).trim()
@@ -60,7 +100,6 @@ const ChatBot = () => {
     setChargement(true)
 
     try {
-      // Historique sans le message de bienvenue ni les erreurs UI
       const historique = [...messages, msgUser]
         .filter(m => m.id !== 0 && m.role !== 'error')
         .map(m => ({ role: m.role, texte: m.texte }))
@@ -95,20 +134,15 @@ const ChatBot = () => {
     setErreur(null)
   }
 
-  // Rendu Markdown minimal : **gras**, sauts de ligne, listes
   const renderMarkdown = (texte) => {
     return texte.split('\n').map((ligne, i) => {
-      // Ligne vide
       if (!ligne.trim()) return <br key={i} />
-
-      // Gras **texte**
       const parties = ligne.split(/(\*\*[^*]+\*\*)/g)
       const rendu   = parties.map((p, j) =>
         p.startsWith('**') && p.endsWith('**')
           ? <strong key={j}>{p.slice(2, -2)}</strong>
           : <span key={j}>{p}</span>
       )
-
       return <p key={i} className="mb-1">{rendu}</p>
     })
   }
@@ -142,7 +176,7 @@ const ChatBot = () => {
                   </p>
                   <p className="text-white/70 text-xs mt-0.5 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block" />
-                    Gemini 2.5 · En ligne
+                    IA · En ligne
                   </p>
                 </div>
               </div>
@@ -166,14 +200,11 @@ const ChatBot = () => {
             >
               {messages.map(m => (
                 <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}>
-
-                  {/* Avatar bot */}
                   {m.role !== 'user' && (
                     <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
                       <RiRobot2Line className="text-white" size={14} />
                     </div>
                   )}
-
                   <div className={`max-w-[84%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                     m.role === 'user'
                       ? 'bg-primary text-white rounded-br-sm'
@@ -192,35 +223,27 @@ const ChatBot = () => {
                   </div>
                   <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm flex gap-1.5">
                     {[0, 1, 2].map(i => (
-                      <span
-                        key={i}
-                        className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"
-                        style={{ animationDelay: `${i * 0.18}s` }}
-                      />
+                      <span key={i} className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"
+                        style={{ animationDelay: `${i * 0.18}s` }} />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Erreur */}
               {erreur && (
-                <div className="bg-orange-50 border border-orange-200 text-orange-700
-                                text-xs px-4 py-3 rounded-xl">
+                <div className="bg-orange-50 border border-orange-200 text-orange-700 text-xs px-4 py-3 rounded-xl">
                   ⚠️ {erreur}
                 </div>
               )}
             </div>
 
-            {/* ── Suggestions (premier message seulement) ── */}
+            {/* ── Suggestions ── */}
             {messages.length === 1 && !chargement && (
               <div className="px-3 pb-2 flex flex-wrap gap-1.5 shrink-0">
                 {SUGGESTIONS.map(s => (
-                  <button
-                    key={s}
-                    onClick={() => envoyerMessage(s)}
+                  <button key={s} onClick={() => envoyerMessage(s)}
                     className="text-xs bg-primary/10 hover:bg-primary hover:text-white
-                               text-primary px-3 py-1.5 rounded-full transition-colors font-medium"
-                  >
+                               text-primary px-3 py-1.5 rounded-full transition-colors font-medium">
                     {s}
                   </button>
                 ))}
@@ -229,18 +252,37 @@ const ChatBot = () => {
 
             {/* ── Zone de saisie ── */}
             <div className="px-3 py-3 border-t border-gray-100 bg-white flex gap-2 shrink-0">
+
+              {/* Bouton microphone */}
+              <button
+                onClick={toggleVocal}
+                title={enregistrement ? 'Arrêter l\'enregistrement' : 'Message vocal'}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                  enregistrement
+                    ? 'bg-red-500 text-white shadow-md animate-pulse'
+                    : 'bg-gray-100 text-gray-500 hover:bg-primary/10 hover:text-primary'
+                }`}
+              >
+                {enregistrement
+                  ? <HiStop size={17} />
+                  : <HiMicrophone size={17} />
+                }
+              </button>
+
               <input
                 ref={inputRef}
                 type="text"
                 value={saisie}
                 onChange={e => setSaisie(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) envoyerMessage() }}
-                placeholder="Posez n'importe quelle question..."
+                placeholder={enregistrement ? '🎤 Parlez maintenant...' : 'Votre question...'}
                 disabled={chargement}
                 className="flex-1 text-sm outline-none bg-gray-50 rounded-xl
                            px-4 py-2.5 border border-gray-200 focus:border-primary
                            transition-colors text-secondary placeholder-gray-400"
               />
+
+              {/* Bouton envoyer */}
               <button
                 onClick={() => envoyerMessage()}
                 disabled={!saisie.trim() || chargement}
@@ -271,22 +313,15 @@ const ChatBot = () => {
       >
         <AnimatePresence mode="wait">
           {ouvert
-            ? <motion.div key="x"
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0,   opacity: 1 }}
-                exit={{   rotate:  90, opacity: 0 }}>
+            ? <motion.div key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
                 <HiX className="text-white" size={24} />
               </motion.div>
-            : <motion.div key="bot"
-                initial={{ rotate:  90, opacity: 0 }}
-                animate={{ rotate: 0,   opacity: 1 }}
-                exit={{   rotate: -90, opacity: 0 }}>
+            : <motion.div key="bot" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
                 <RiRobot2Line className="text-white" size={26} />
               </motion.div>
           }
         </AnimatePresence>
 
-        {/* Badge non-lus */}
         <AnimatePresence>
           {nonLus > 0 && !ouvert && (
             <motion.span
