@@ -57,11 +57,9 @@ CLIENTS : PME, particuliers, institutions, jeunes en formation
 - Pour les devis : inviter à appeler ou écrire à hindodigitale@gmail.com
 - Sois concis (3-4 phrases maximum par réponse)`
 
-// Priorité des modèles : du plus capable au plus basique
+// Modèles avec tier gratuit réel (gemini-2.0-flash exclu : limit=0 gratuit)
 const MODELES_PRIORITE = [
-  'gemini-2.0-flash',
   'gemini-1.5-flash',
-  'gemini-1.5-flash-latest',
   'gemini-1.5-flash-8b',
   'gemini-1.5-pro',
   'gemini-1.0-pro',
