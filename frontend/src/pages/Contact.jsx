@@ -229,7 +229,7 @@ const Contact = () => {
                 <p className="text-sm font-medium text-secondary mb-3">Suivez-nous</p>
                 <div className="flex gap-3">
                   {[
-                    { icon: <FaFacebookF />,  href: 'https://facebook.com/hindodigitale',      label: 'Facebook'  },
+                    { icon: <FaFacebookF />,  href: 'https://www.facebook.com/profile.php?id=61589734688095',      label: 'Facebook'  },
                     { icon: <FaTiktok />,     href: c('general_tiktok') || 'https://tiktok.com/@hindodigitale', label: 'TikTok' },
                     { icon: <FaWhatsapp />,   href: 'https://wa.me/221788494363',              label: 'WhatsApp'  },
                     { icon: <FaInstagram />,  href: 'https://instagram.com/hindodigitale',     label: 'Instagram' },
