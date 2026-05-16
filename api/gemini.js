@@ -57,38 +57,11 @@ CLIENTS : PME, particuliers, institutions, jeunes en formation
 - Pour les devis : inviter à appeler ou écrire à hindodigitale@gmail.com
 - Sois concis (3-4 phrases maximum par réponse)`
 
-// Modèles avec tier gratuit réel (gemini-2.0-flash exclu : limit=0 gratuit)
-const MODELES_PRIORITE = [
+// Modèles gratuits confirmés sur AI Studio (pas d'auto-détection)
+const MODELES_GRATUITS = [
   'gemini-1.5-flash',
   'gemini-1.5-flash-8b',
-  'gemini-1.5-pro',
-  'gemini-1.0-pro',
-  'gemini-pro',
 ]
-
-async function trouverModele(apiKey) {
-  try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    )
-    if (!resp.ok) return null
-    const { models = [] } = await resp.json()
-
-    const disponibles = models
-      .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
-      .map(m => m.name.replace('models/', ''))
-
-    for (const prefere of MODELES_PRIORITE) {
-      const trouve = disponibles.find(d => d === prefere || d.startsWith(prefere))
-      if (trouve) return trouve
-    }
-
-    // Retourne n'importe quel modèle disponible en dernier recours
-    return disponibles[0] || null
-  } catch {
-    return null
-  }
-}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -106,14 +79,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Clé API manquante — ajoutez GEMINI_API_KEY dans Vercel' })
   }
 
-  // Détecte automatiquement le meilleur modèle disponible
-  const model = await trouverModele(apiKey)
-  if (!model) {
-    return res.status(500).json({
-      error: 'Aucun modèle Gemini disponible. Vérifiez la clé API sur aistudio.google.com/apikey',
-    })
-  }
-
   // Historique au format Gemini (alternance stricte user/model)
   const contents = []
   for (const m of historique) {
@@ -127,35 +92,38 @@ export default async function handler(req, res) {
   }
   contents.push({ role: 'user', parts: [{ text: message.trim() }] })
 
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: CONTEXTE_HINDO }] },
-        contents,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
-      }),
-    })
+  // Essaie chaque modèle gratuit jusqu'à ce qu'un réponde
+  for (const model of MODELES_GRATUITS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: CONTEXTE_HINDO }] },
+          contents,
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        }),
+      })
 
-    const data = await response.json()
+      const data = await response.json()
 
-    if (!response.ok) {
-      console.error('[Gemini]', model, data?.error?.message)
-      return res.status(500).json({ error: data?.error?.message || `Erreur ${response.status}` })
+      if (!response.ok) {
+        console.warn(`[Gemini] ${model} échoué:`, data?.error?.message)
+        continue
+      }
+
+      const reponse = data?.candidates?.[0]?.content?.parts?.[0]?.text
+      if (!reponse) continue
+
+      return res.json({ reponse })
+
+    } catch (err) {
+      console.warn(`[Gemini] ${model} erreur réseau:`, err.message)
     }
-
-    const reponse = data?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!reponse) {
-      const raison = data?.candidates?.[0]?.finishReason || 'inconnue'
-      return res.status(500).json({ error: `Pas de réponse (raison: ${raison})` })
-    }
-
-    return res.json({ reponse, model })
-
-  } catch (err) {
-    console.error('[Gemini] Erreur réseau:', err.message)
-    return res.status(500).json({ error: 'Service indisponible' })
   }
+
+  return res.status(500).json({
+    error: 'Quota Gemini dépassé. Vérifiez votre clé sur aistudio.google.com/apikey et assurez-vous de créer la clé dans un NOUVEAU projet.',
+  })
 }
