@@ -313,46 +313,52 @@ export const getSettings = async () => {
   })
 }
 
+const upsertSetting = async (key, value) => {
+  const { error } = await supabase.from('settings')
+    .upsert({ key, value }, { onConflict: 'key' })
+  if (error) throw new Error(`Erreur sauvegarde paramètre "${key}": ${error.message}`)
+}
+
 export const uploadHeroImage = async (fichier) => {
   const { data: ancienData } = await supabase.from('settings').select('value').eq('key', 'hero_image_path').maybeSingle()
   await deleteFile(ancienData?.value)
   const path = await uploadFile('hindo-media', 'hero', fichier)
-  await supabase.from('settings').upsert({ key: 'hero_image_path', value: path })
+  await upsertSetting('hero_image_path', path)
   return publicUrl(path)
 }
 
 export const deleteHeroImage = async () => {
   const { data } = await supabase.from('settings').select('value').eq('key', 'hero_image_path').maybeSingle()
   await deleteFile(data?.value)
-  await supabase.from('settings').upsert({ key: 'hero_image_path', value: null })
+  await upsertSetting('hero_image_path', null)
 }
 
 export const uploadLogo = async (fichier) => {
   const { data: ancienData } = await supabase.from('settings').select('value').eq('key', 'logo_path').maybeSingle()
   await deleteFile(ancienData?.value)
   const path = await uploadFile('hindo-media', 'logos', fichier)
-  await supabase.from('settings').upsert({ key: 'logo_path', value: path })
+  await upsertSetting('logo_path', path)
   return publicUrl(path)
 }
 
 export const deleteLogo = async () => {
   const { data } = await supabase.from('settings').select('value').eq('key', 'logo_path').maybeSingle()
   await deleteFile(data?.value)
-  await supabase.from('settings').upsert({ key: 'logo_path', value: null })
+  await upsertSetting('logo_path', null)
 }
 
 export const uploadTeamImage = async (fichier) => {
   const { data: ancienData } = await supabase.from('settings').select('value').eq('key', 'team_image_path').maybeSingle()
   await deleteFile(ancienData?.value)
   const path = await uploadFile('hindo-media', 'team', fichier)
-  await supabase.from('settings').upsert({ key: 'team_image_path', value: path })
+  await upsertSetting('team_image_path', path)
   return publicUrl(path)
 }
 
 export const deleteTeamImage = async () => {
   const { data } = await supabase.from('settings').select('value').eq('key', 'team_image_path').maybeSingle()
   await deleteFile(data?.value)
-  await supabase.from('settings').upsert({ key: 'team_image_path', value: null })
+  await upsertSetting('team_image_path', null)
 }
 
 // ---- CONTENU CMS ----
