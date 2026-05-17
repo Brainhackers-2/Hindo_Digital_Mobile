@@ -65,7 +65,7 @@ const Navbar = () => {
             </li>
           ))}
           <li className="ml-2">
-            <Link to="/galerie" className="btn-primary text-sm">
+            <Link to="/contact" className="btn-primary text-sm">
               Nous contacter
             </Link>
           </li>
