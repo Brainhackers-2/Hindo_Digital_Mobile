@@ -1,6 +1,6 @@
 // admin/pages/AdminUtilisateurs.jsx — Gestion des utilisateurs admin
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiPlus, HiTrash, HiPencil, HiX, HiCheck,
@@ -36,23 +36,28 @@ const AdminUtilisateurs = () => {
   const [saving,   setSaving]   = useState(false)
   const [erreur,   setErreur]   = useState('')
   const [succes,   setSucces]   = useState('')
+  const timerRef = useRef(null)
 
-  const charger = async () => {
+  const charger = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('admin_profiles')
         .select('id, nom, est_super_admin, permissions, created_at')
         .order('created_at')
+      if (error) throw error
       setUtilisateurs(data || [])
     } catch (e) {
       setErreur(e.message)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { charger() }, [])
+  useEffect(() => {
+    charger()
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [charger])
 
   const togglePermission = (id) => {
     setForm(prev => ({
@@ -83,52 +88,39 @@ const AdminUtilisateurs = () => {
     setSaving(true); setErreur(''); setSucces('')
     try {
       if (modal === 'create') {
-        // Créer utilisateur dans Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.admin
-          ? await supabase.auth.admin.createUser({
-              email: form.email,
-              password: form.password,
-              email_confirm: true,
-            })
-          : { data: null, error: new Error('Fonction admin non disponible') }
+        // Récupère le token de session pour l'API serverless
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) throw new Error('Session expirée — reconnectez-vous')
 
-        if (authError) {
-          // Fallback : invitation par email
-          const { data: inv, error: invErr } = await supabase.auth.signUp({
+        const res = await fetch('/api/admin-users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
             email: form.email,
             password: form.password,
-          })
-          if (invErr) throw invErr
-          const userId = inv.user?.id
-          if (!userId) throw new Error('Impossible de créer l\'utilisateur')
-
-          await supabase.from('admin_profiles').insert({
-            id: userId,
             nom: form.nom,
             est_super_admin: form.est_super_admin,
             permissions: form.est_super_admin ? ['all'] : form.permissions,
-          })
-        } else {
-          const userId = authData.user?.id
-          await supabase.from('admin_profiles').insert({
-            id: userId,
-            nom: form.nom,
-            est_super_admin: form.est_super_admin,
-            permissions: form.est_super_admin ? ['all'] : form.permissions,
-          })
-        }
-        setSucces('Utilisateur créé. Il peut maintenant se connecter.')
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Erreur création')
+        setSucces('Utilisateur créé. Il peut maintenant se connecter avec ses identifiants.')
       } else {
-        // Modifier profil existant
-        await supabase.from('admin_profiles').update({
+        // Modifier profil existant (pas besoin de l'API serverless)
+        const { error } = await supabase.from('admin_profiles').update({
           nom: form.nom,
           est_super_admin: form.est_super_admin,
           permissions: form.est_super_admin ? ['all'] : form.permissions,
         }).eq('id', modal.id)
+        if (error) throw error
         setSucces('Profil mis à jour.')
       }
       await charger()
-      setTimeout(() => setModal(null), 1500)
+      timerRef.current = setTimeout(() => { setModal(null); setErreur(''); setSucces('') }, 1500)
     } catch (e) {
       setErreur(e.message)
     } finally {
@@ -139,8 +131,23 @@ const AdminUtilisateurs = () => {
   const supprimer = async (u) => {
     if (u.id === moi?.id) { setErreur('Vous ne pouvez pas supprimer votre propre compte.'); return }
     if (!confirm(`Supprimer l'utilisateur ${u.nom} ?`)) return
-    await supabase.from('admin_profiles').delete().eq('id', u.id)
-    await charger()
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Session expirée — reconnectez-vous')
+      const res = await fetch('/api/admin-users', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId: u.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      await charger()
+    } catch (e) {
+      setErreur(e.message)
+    }
   }
 
   if (!isSuperAdmin) {
@@ -258,7 +265,7 @@ const AdminUtilisateurs = () => {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            onClick={() => setModal(null)}
+            onClick={() => { setModal(null); setErreur(''); setSucces('') }}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
@@ -269,7 +276,7 @@ const AdminUtilisateurs = () => {
                 <h3 className="font-bold font-heading text-secondary">
                   {modal === 'create' ? 'Créer un utilisateur' : `Modifier — ${modal.nom}`}
                 </h3>
-                <button onClick={() => setModal(null)}
+                <button onClick={() => { setModal(null); setErreur(''); setSucces('') }}
                   className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400">
                   <HiX size={18} />
                 </button>
