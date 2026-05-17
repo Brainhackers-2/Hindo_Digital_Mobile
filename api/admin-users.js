@@ -8,7 +8,7 @@ const SERVICE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY
 const authHeaders = (token) => ({
   'Content-Type':  'application/json',
   'Authorization': `Bearer ${token}`,
-  'apikey':        token,
+  'apikey':        SERVICE_KEY,
 })
 
 const adminHeaders = () => ({
