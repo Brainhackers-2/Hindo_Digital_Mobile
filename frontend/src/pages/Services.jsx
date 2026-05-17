@@ -16,6 +16,7 @@ import SectionHeader  from '../components/SectionHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
 import useFetchRealtime from '../hooks/useFetchRealtime'
 import { getServices }   from '../services/servicesApi'
+import { useContenu }    from '../context/ContenuContext'
 
 // Correspondance icône → composant (identique aux seeders)
 const ICONES_MAP = {
@@ -112,6 +113,7 @@ const SERVICES_OFFICIELS = [
 ]
 
 const Services = () => {
+  const { c } = useContenu()
   const { data: services, loading, error } = useFetchRealtime(getServices, 'services')
 
   // Fusionne les données API avec les détails étendus locaux
@@ -274,7 +276,7 @@ const Services = () => {
                       Demander un devis <HiArrowRight />
                     </Link>
                     <a
-                      href="https://wa.me/221788494363"
+                      href={c('general_whatsapp') || 'https://wa.me/221788494363'}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white
@@ -306,11 +308,9 @@ const Services = () => {
 
             {/* Numéros de téléphone */}
             <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {[
-                { tel: '+221 76 404 37 44', href: 'tel:+221764043744' },
-                { tel: '+221 78 849 43 63', href: 'tel:+221788494363' },
-                { tel: '+221 78 121 85 95', href: 'tel:+221781218595' },
-              ].map(({ tel, href }) => (
+              {[c('general_tel1'), c('general_tel2'), c('general_tel3')].filter(Boolean).map(tel => ({
+                tel, href: `tel:${tel.replace(/\s/g,'')}`,
+              })).map(({ tel, href }) => (
                 <a
                   key={href}
                   href={href}

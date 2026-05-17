@@ -47,10 +47,10 @@ const Footer = () => {
           {/* Réseaux sociaux */}
           <div className="flex gap-3">
             {[
-              { icon: <FaFacebookF />,  href: 'https://www.facebook.com/profile.php?id=61589734688095',   label: 'Facebook'  },
-              { icon: <FaTiktok />, href: c('general_tiktok') || 'https://tiktok.com/@hindodigitale', label: 'TikTok' },
-              { icon: <FaWhatsapp />,   href: 'https://wa.me/221788494363',            label: 'WhatsApp'  },
-              { icon: <FaInstagram />,  href: 'https://instagram.com/hindodigitale',  label: 'Instagram' },
+              { icon: <FaFacebookF />, href: c('general_facebook') || 'https://facebook.com/hindodigitale', label: 'Facebook'  },
+              { icon: <FaTiktok />,    href: c('general_tiktok')   || 'https://tiktok.com/@hindodigitale',  label: 'TikTok'    },
+              { icon: <FaWhatsapp />,  href: c('general_whatsapp') || 'https://wa.me/221788494363',         label: 'WhatsApp'  },
+              { icon: <FaInstagram />, href: c('general_instagram')|| 'https://instagram.com/hindodigitale',label: 'Instagram' },
             ].map(({ icon, href, label }) => (
               <a
                 key={label}

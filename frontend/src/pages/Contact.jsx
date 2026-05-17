@@ -229,10 +229,10 @@ const Contact = () => {
                 <p className="text-sm font-medium text-secondary mb-3">Suivez-nous</p>
                 <div className="flex gap-3">
                   {[
-                    { icon: <FaFacebookF />,  href: 'https://www.facebook.com/profile.php?id=61589734688095',      label: 'Facebook'  },
-                    { icon: <FaTiktok />,     href: c('general_tiktok') || 'https://tiktok.com/@hindodigitale', label: 'TikTok' },
-                    { icon: <FaWhatsapp />,   href: 'https://wa.me/221788494363',              label: 'WhatsApp'  },
-                    { icon: <FaInstagram />,  href: 'https://instagram.com/hindodigitale',     label: 'Instagram' },
+                    { icon: <FaFacebookF />, href: c('general_facebook') || 'https://facebook.com/hindodigitale',  label: 'Facebook'  },
+                    { icon: <FaTiktok />,    href: c('general_tiktok')   || 'https://tiktok.com/@hindodigitale',   label: 'TikTok'    },
+                    { icon: <FaWhatsapp />,  href: c('general_whatsapp') || 'https://wa.me/221788494363',          label: 'WhatsApp'  },
+                    { icon: <FaInstagram />, href: c('general_instagram')|| 'https://instagram.com/hindodigitale', label: 'Instagram' },
                   ].map(({ icon, href, label }) => (
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
                       className="w-10 h-10 bg-primary/10 hover:bg-primary text-primary hover:text-white
