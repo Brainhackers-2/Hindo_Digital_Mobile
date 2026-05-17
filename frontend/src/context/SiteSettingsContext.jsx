@@ -7,8 +7,11 @@ import { supabase } from '../lib/supabase'
 
 const SiteSettingsContext = createContext(null)
 
-const publicUrl = (path) =>
-  path ? supabase.storage.from('hindo-media').getPublicUrl(path).data.publicUrl : null
+const publicUrl = (path) => {
+  if (!path) return null
+  const url = supabase.storage.from('hindo-media').getPublicUrl(path).data.publicUrl
+  return `${url}?v=${Date.now()}`
+}
 
 // Taille par défaut (en %) — modifiable depuis l'admin
 const TAILLE_DEFAUT_HERO = 100
