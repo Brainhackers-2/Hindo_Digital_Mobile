@@ -52,7 +52,7 @@ const ZoneUpload = ({
       setFichier(null); setApercu(null)
       onSuccess()
     } catch (err) {
-      setMessage({ type: 'error', texte: err.response?.data?.message || 'Erreur lors de l\'upload.' })
+      setMessage({ type: 'error', texte: err.message || 'Erreur lors de l\'upload.' })
     } finally {
       setUploading(false)
     }
