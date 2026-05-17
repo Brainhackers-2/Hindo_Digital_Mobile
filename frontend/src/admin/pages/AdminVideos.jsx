@@ -118,7 +118,7 @@ const AdminVideos = () => {
       await adminApi.post(endpoint, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       refetch(); setModal(null)
     } catch (err) {
-      setErreur(err.response?.data?.message || 'Erreur lors de l\'enregistrement.')
+      setErreur(err.message || 'Erreur lors de l\'enregistrement.')
     } finally {
       setSaving(false)
     }
