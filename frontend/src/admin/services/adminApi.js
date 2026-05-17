@@ -37,14 +37,34 @@ const deleteFile = async (path) => {
 // ============================================================
 const wrap = (data) => ({ data: { data } })
 
+// ---- GALERIE (table séparée des réalisations) ----
+export const getGalerieAdmin = async () => {
+  const { data } = await supabase.from('galerie').select('*').order('created_at', { ascending: false })
+  return wrap((data || []).map(g => ({ ...g, image_url: publicUrl(g.image_path) })))
+}
+
+export const ajouterPhoto = async (form, imageFichier) => {
+  let image_path = null
+  if (imageFichier) image_path = await uploadFile('hindo-media', 'galerie', imageFichier)
+  const { error } = await supabase.from('galerie').insert([{ titre: form.titre || 'Photo', image_path }])
+  if (error) throw error
+}
+
+export const supprimerPhoto = async (id) => {
+  const { data } = await supabase.from('galerie').select('image_path').eq('id', id).maybeSingle()
+  await deleteFile(data?.image_path)
+  await supabase.from('galerie').delete().eq('id', id)
+}
+
 // ---- DASHBOARD ----
 export const getDashboard = async () => {
-  const [contacts, services, realisations, videos, formations, inscriptions, newsletters, temoignages] =
+  const [contacts, services, realisations, videos, galerie, formations, inscriptions, newsletters, temoignages] =
     await Promise.all([
       supabase.from('contacts').select('id, lu', { count: 'exact' }),
       supabase.from('services').select('id', { count: 'exact' }),
       supabase.from('realisations').select('id', { count: 'exact' }),
       supabase.from('videos').select('id', { count: 'exact' }),
+      supabase.from('galerie').select('id', { count: 'exact' }),
       supabase.from('formations').select('id', { count: 'exact' }),
       supabase.from('inscriptions').select('id', { count: 'exact' }),
       supabase.from('newsletters').select('id', { count: 'exact' }).eq('actif', true),
@@ -67,6 +87,7 @@ export const getDashboard = async () => {
       services:     services.count,
       realisations: realisations.count,
       videos:       videos.count,
+      galerie:      galerie.count,
       formations:   formations.count,
       inscriptions: inscriptions.count,
       newsletters:  newsletters.count,
@@ -421,6 +442,7 @@ async function routerGet(path) {
   if (path === '/admin/temoignages')  return getTemoignagesAdmin()
   if (path === '/admin/newsletters')  return getNewsletter()
   if (path === '/admin/videos')       return getVideosAdmin()
+  if (path === '/admin/galerie')      return getGalerieAdmin()
   if (path === '/admin/settings')     return getSettings()
   if (path === '/admin/contenu')      return getContenu()
   throw new Error(`[adminApi] Route GET inconnue: ${path}`)
@@ -429,6 +451,13 @@ async function routerGet(path) {
 // ---- POST ----
 async function routerPost(path, data) {
   const form = fdToObj(data)
+
+  // Galerie photo
+  if (path === '/admin/galerie') {
+    const file = data instanceof FormData ? data.get('image') : null
+    try { await ajouterPhoto(form, file); return ok() }
+    catch (e) { throw new Error(e.message) }
+  }
 
   // Contenu CMS
   if (path === '/admin/contenu') {
@@ -552,6 +581,10 @@ async function routerDelete(path) {
   if (path === '/admin/settings/logo')        { await deleteLogo();       return ok() }
   if (path === '/admin/settings/team-image')  { await deleteTeamImage();  return ok() }
   if (path === '/admin/settings/hero-image')  { await deleteHeroImage();  return ok() }
+
+  // Photo galerie
+  const galerieM = path.match(/^\/admin\/galerie\/(.+)$/)
+  if (galerieM) { await supprimerPhoto(galerieM[1]); return ok() }
 
   // Image d'un service seul
   const svcImgM = path.match(/^\/admin\/services\/(\d+)\/image$/)

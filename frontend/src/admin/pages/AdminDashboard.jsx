@@ -67,8 +67,9 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <StatCard label="Messages"          valeur={stats?.contacts?.total}  icon={<HiMail size={22} />}         couleur="bg-primary"      lien="/admin/contacts"     badge={stats?.contacts?.non_lus} />
           <StatCard label="Services"          valeur={stats?.services}         icon={<HiCog size={22} />}          couleur="bg-secondary"    lien="/admin/services"    />
-          <StatCard label="Photos (Galerie)"  valeur={stats?.realisations}     icon={<HiPhotograph size={22} />}   couleur="bg-blue-600"     lien="/admin/realisations" />
-          <StatCard label="Vidéos (Galerie)"  valeur={stats?.videos}           icon={<HiPlay size={22} />}         couleur="bg-indigo-600"   lien="/admin/videos"      />
+          <StatCard label="Galerie Photos"    valeur={stats?.galerie}          icon={<HiPhotograph size={22} />}   couleur="bg-blue-600"     lien="/admin/galerie"      />
+          <StatCard label="Réalisations"      valeur={stats?.realisations}     icon={<HiPhotograph size={22} />}   couleur="bg-cyan-600"     lien="/admin/realisations" />
+          <StatCard label="Vidéos"            valeur={stats?.videos}           icon={<HiPlay size={22} />}         couleur="bg-indigo-600"   lien="/admin/videos"      />
           <StatCard label="Formations"        valeur={stats?.formations}       icon={<HiAcademicCap size={22} />}  couleur="bg-green-600"    lien="/admin/formations"  />
           <StatCard label="Inscriptions"      valeur={stats?.inscriptions}     icon={<HiClipboardList size={22}/>} couleur="bg-yellow-500"   lien="/admin/inscriptions" />
           <StatCard label="Témoignages"       valeur={stats?.temoignages}      icon={<HiStar size={22} />}         couleur="bg-purple-600"   lien="/admin/temoignages" />
