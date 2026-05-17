@@ -47,7 +47,17 @@ const ZoneUpload = ({
     try {
       const fd = new FormData()
       fd.append(fieldName, fichier)
-      await adminApi.post(endpoint, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      const res = await adminApi.post(endpoint, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      // Vérifie que l'URL est accessible
+      const url = res?.data?.data?.team_image_url || res?.data?.data?.logo_url || res?.data?.data?.hero_image_url
+      if (url) {
+        const test = await fetch(url, { method: 'HEAD' }).catch(() => null)
+        if (test && !test.ok) {
+          setMessage({ type: 'error', texte: `Image uploadée mais inaccessible (${test.status}). Vérifiez que le bucket "hindo-media" est Public dans Supabase → Storage.` })
+          onSuccess()
+          return
+        }
+      }
       setMessage({ type: 'success', texte: `${titre} mis(e) à jour avec succès !` })
       setFichier(null); setApercu(null)
       onSuccess()
