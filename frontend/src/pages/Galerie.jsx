@@ -73,16 +73,8 @@ const Galerie = () => {
   const { data: photos, loading: loadPhotos } = useFetchRealtime(getGalerie, 'galerie')
   const { data: videos, loading: loadVideos } = useFetchRealtime(getVideosGalerie, 'videos')
 
-  const getEmbed = (url = '') => {
-    const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/)
-    if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1`
-    const vi = url.match(/vimeo\.com\/(\d+)/)
-    if (vi) return `https://player.vimeo.com/video/${vi[1]}?autoplay=1`
-    return url
-  }
-
   const getYtId = (url = '') =>
-    url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/)?.[1]
+    url.match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/)?.[1]
 
   return (
     <>
@@ -106,8 +98,13 @@ const Galerie = () => {
               <HiX size={20} />
             </button>
             <div onClick={e => e.stopPropagation()} className="w-full max-w-3xl aspect-video rounded-xl overflow-hidden">
-              <iframe src={getEmbed(videoActif.url)} className="w-full h-full"
-                allow="autoplay; fullscreen" allowFullScreen title={videoActif.titre} />
+              <iframe
+                src={videoActif.embed_url || videoActif.url_lecture || videoActif.url_video}
+                className="w-full h-full"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                title={videoActif.titre}
+              />
             </div>
           </motion.div>
         )}
@@ -200,7 +197,7 @@ const Galerie = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {videos.map((video, i) => {
-                    const ytId = getYtId(video.url || video.url_video || '')
+                    const ytId = video.thumbnail_url ? null : getYtId(video.url_video || '')
                     return (
                       <motion.div
                         key={video.id}
@@ -210,7 +207,10 @@ const Galerie = () => {
                         onClick={() => setVideoActif(video)}
                         className="group relative aspect-video bg-gray-900 rounded-xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-shadow"
                       >
-                        {ytId ? (
+                        {video.thumbnail_url ? (
+                          <img src={video.thumbnail_url} alt={video.titre}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        ) : ytId ? (
                           <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
                             alt={video.titre}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
