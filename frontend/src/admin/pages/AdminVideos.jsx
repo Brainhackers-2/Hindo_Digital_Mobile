@@ -18,7 +18,7 @@ const CATEGORIES = ['Réseaux', 'Vidéosurveillance', 'Web & Mobile', 'Formation
 
 const VIDE = {
   titre: '', description: '', url_video: '', type: 'youtube',
-  categorie: '', actif: true, ordre: 0,
+  categorie: '', actif: true, ordre: 0, source: 'realisations',
 }
 
 // Icône selon le type
@@ -51,6 +51,7 @@ const AdminVideos = () => {
     setForm({
       titre: v.titre, description: v.description || '', url_video: v.url_video || '',
       type: v.type, categorie: v.categorie || '', actif: v.actif, ordre: v.ordre,
+      source: v.source || 'realisations',
     })
     setPreviewUrl(v.thumbnail_url || null)
     setVideoFichier(null)
@@ -96,6 +97,7 @@ const AdminVideos = () => {
       fd.append('categorie',   form.categorie)
       fd.append('actif',       form.actif ? '1' : '0')
       fd.append('ordre',       form.ordre || 0)
+      fd.append('source',      form.source || 'realisations')
 
       if (form.type === 'fichier') {
         if (videoFichier) {
@@ -388,9 +390,30 @@ const AdminVideos = () => {
                   </div>
                 )}
 
+                {/* ---- Page de destination ---- */}
+                <div>
+                  <label className="text-sm font-medium text-secondary block mb-1.5">Page de destination *</label>
+                  <div className="flex gap-3">
+                    {[
+                      { val: 'realisations', label: '📁 Réalisations' },
+                      { val: 'galerie',      label: '🖼 Galerie'       },
+                    ].map(opt => (
+                      <button key={opt.val} type="button"
+                        onClick={() => setForm({...form, source: opt.val})}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                          form.source === opt.val
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                        }`}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* ---- Informations de la vidéo ---- */}
                 <div>
-                  <label className="text-sm font-medium text-secondary block mb-1.5">Titre du projet *</label>
+                  <label className="text-sm font-medium text-secondary block mb-1.5">Titre *</label>
                   <input type="text" value={form.titre}
                     onChange={e => setForm({...form, titre: e.target.value})}
                     placeholder="Ex: Installation réseau PME Ziguinchor"

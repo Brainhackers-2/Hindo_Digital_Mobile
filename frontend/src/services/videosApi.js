@@ -29,14 +29,26 @@ function enrichirVideo(v) {
   return { ...v, embed_url, url_lecture, est_fichier_local: !!v.video_file_path }
 }
 
+// Vidéos de la page Réalisations
 export const getVideos = async () => {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('videos')
     .select('*')
     .eq('actif', true)
+    .in('source', ['realisations', null])
     .order('ordre', { ascending: true })
     .order('created_at', { ascending: false })
+  return { data: { data: (data || []).map(enrichirVideo) } }
+}
 
-  if (error) throw error
+// Vidéos de la page Galerie
+export const getVideosGalerie = async () => {
+  const { data } = await supabase
+    .from('videos')
+    .select('*')
+    .eq('actif', true)
+    .eq('source', 'galerie')
+    .order('ordre', { ascending: true })
+    .order('created_at', { ascending: false })
   return { data: { data: (data || []).map(enrichirVideo) } }
 }

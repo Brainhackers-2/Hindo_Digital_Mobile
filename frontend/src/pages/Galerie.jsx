@@ -7,8 +7,8 @@ import { HiX, HiPhotograph, HiPlay, HiChevronLeft, HiChevronRight } from 'react-
 import SectionHeader     from '../components/SectionHeader'
 import LoadingSpinner    from '../components/LoadingSpinner'
 import useFetchRealtime  from '../hooks/useFetchRealtime'
-import { getGalerie }    from '../services/galerieApi'
-import { getVideos }     from '../services/videosApi'
+import { getGalerie }         from '../services/galerieApi'
+import { getVideosGalerie }   from '../services/videosApi'
 
 // Lightbox avec navigation
 const Lightbox = ({ photos, index, onClose }) => {
@@ -71,7 +71,7 @@ const Galerie = () => {
   const [videoActif, setVideoActif]   = useState(null)
 
   const { data: photos, loading: loadPhotos } = useFetchRealtime(getGalerie, 'galerie')
-  const { data: videos, loading: loadVideos } = useFetchRealtime(getVideos, 'videos')
+  const { data: videos, loading: loadVideos } = useFetchRealtime(getVideosGalerie, 'videos')
 
   const getEmbed = (url = '') => {
     const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/)

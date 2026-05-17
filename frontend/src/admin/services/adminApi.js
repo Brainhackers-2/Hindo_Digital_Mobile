@@ -272,7 +272,7 @@ export const creerVideo = async (form, videoFichier) => {
     url_video = publicUrl(video_file_path)
   }
   const { data, error } = await supabase.from('videos')
-    .insert([{ titre: form.titre, description: form.description, url_video, video_file_path, type: form.type, categorie: form.categorie || null, actif: form.actif, ordre: form.ordre || 0 }])
+    .insert([{ titre: form.titre, description: form.description, url_video, video_file_path, type: form.type, categorie: form.categorie || null, actif: form.actif, ordre: form.ordre || 0, source: form.source || 'realisations' }])
     .select().single()
   if (error) throw error
   return enrichirVideo(data)
@@ -286,7 +286,7 @@ export const modifierVideo = async (id, form, videoFichier, ancienFilePath) => {
     url_video = publicUrl(video_file_path)
   }
   const { data, error } = await supabase.from('videos')
-    .update({ titre: form.titre, description: form.description, url_video, video_file_path, type: form.type, categorie: form.categorie || null, actif: form.actif, ordre: form.ordre || 0 })
+    .update({ titre: form.titre, description: form.description, url_video, video_file_path, type: form.type, categorie: form.categorie || null, actif: form.actif, ordre: form.ordre || 0, source: form.source || 'realisations' })
     .eq('id', id).select().single()
   if (error) throw error
   return enrichirVideo(data)
