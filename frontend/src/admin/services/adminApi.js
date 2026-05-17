@@ -39,11 +39,12 @@ const wrap = (data) => ({ data: { data } })
 
 // ---- DASHBOARD ----
 export const getDashboard = async () => {
-  const [contacts, services, realisations, formations, inscriptions, newsletters, temoignages] =
+  const [contacts, services, realisations, videos, formations, inscriptions, newsletters, temoignages] =
     await Promise.all([
       supabase.from('contacts').select('id, lu', { count: 'exact' }),
       supabase.from('services').select('id', { count: 'exact' }),
       supabase.from('realisations').select('id', { count: 'exact' }),
+      supabase.from('videos').select('id', { count: 'exact' }),
       supabase.from('formations').select('id', { count: 'exact' }),
       supabase.from('inscriptions').select('id', { count: 'exact' }),
       supabase.from('newsletters').select('id', { count: 'exact' }).eq('actif', true),
@@ -65,6 +66,7 @@ export const getDashboard = async () => {
       contacts:     { total: contacts.count, non_lus: nonLus },
       services:     services.count,
       realisations: realisations.count,
+      videos:       videos.count,
       formations:   formations.count,
       inscriptions: inscriptions.count,
       newsletters:  newsletters.count,

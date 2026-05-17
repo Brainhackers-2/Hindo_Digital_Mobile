@@ -15,18 +15,22 @@ import { useAuthAdmin } from '../context/AuthAdminContext'
 import { LogoIcon } from '../../components/Footer'
 
 // Liens de navigation du panneau admin
+// separator = true → affiche un label de section dans la sidebar
 const NAV_ITEMS = [
-  { path: '/admin',             label: 'Dashboard',    icon: <HiHome size={20} />,         exact: true },
-  { path: '/admin/contacts',    label: 'Messages',     icon: <HiMail size={20} />,         badge: 'contacts' },
-  { path: '/admin/services',    label: 'Services',     icon: <HiCog size={20} />           },
-  { path: '/admin/realisations',label: 'Réalisations', icon: <HiPhotograph size={20} />    },
-  { path: '/admin/videos',      label: 'Vidéos',       icon: <HiPlay size={20} />           },
-  { path: '/admin/formations',  label: 'Formations',   icon: <HiAcademicCap size={20} />   },
-  { path: '/admin/inscriptions',label: 'Inscriptions', icon: <HiClipboardList size={20} /> },
-  { path: '/admin/temoignages', label: 'Témoignages',  icon: <HiStar size={20} />          },
-  { path: '/admin/newsletter',  label: 'Newsletter',   icon: <HiNewspaper size={20} />     },
-  { path: '/admin/contenu',    label: 'Contenu des pages', icon: <HiPencilAlt size={20} />   },
-  { path: '/admin/settings',  label: 'Logo & Paramètres', icon: <HiAdjustments size={20} /> },
+  { path: '/admin',              label: 'Dashboard',         icon: <HiHome size={20} />,         exact: true },
+  { separator: 'Contenu' },
+  { path: '/admin/contacts',     label: 'Messages',          icon: <HiMail size={20} />,         badge: 'contacts' },
+  { path: '/admin/services',     label: 'Services',          icon: <HiCog size={20} />           },
+  { path: '/admin/formations',   label: 'Formations',        icon: <HiAcademicCap size={20} />   },
+  { path: '/admin/inscriptions', label: 'Inscriptions',      icon: <HiClipboardList size={20} /> },
+  { path: '/admin/temoignages',  label: 'Témoignages',       icon: <HiStar size={20} />          },
+  { path: '/admin/newsletter',   label: 'Newsletter',        icon: <HiNewspaper size={20} />     },
+  { separator: 'Galerie' },
+  { path: '/admin/realisations', label: 'Photos',            icon: <HiPhotograph size={20} />    },
+  { path: '/admin/videos',       label: 'Vidéos',            icon: <HiPlay size={20} />          },
+  { separator: 'Paramètres' },
+  { path: '/admin/contenu',      label: 'Contenu des pages', icon: <HiPencilAlt size={20} />     },
+  { path: '/admin/settings',     label: 'Logo & Images',     icon: <HiAdjustments size={20} />   },
 ]
 
 const AdminLayout = ({ children, stats }) => {
@@ -53,30 +57,37 @@ const AdminLayout = ({ children, stats }) => {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map(({ path, label, icon, exact, badge }) => (
-          <NavLink
-            key={path}
-            to={path}
-            end={exact}
-            onClick={() => setSidebarOpen(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                isActive
-                  ? 'bg-primary text-white shadow-md'
-                  : 'text-white/60 hover:text-white hover:bg-white/10'
-              }`
-            }
-          >
-            {icon}
-            <span>{label}</span>
-            {/* Badge pour les messages non lus */}
-            {badge === 'contacts' && stats?.contacts?.non_lus > 0 && (
-              <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                {stats.contacts.non_lus}
-              </span>
-            )}
-          </NavLink>
-        ))}
+        {NAV_ITEMS.map((item, i) => {
+          if (item.separator) return (
+            <p key={i} className="text-white/30 text-[10px] font-bold uppercase tracking-widest px-4 pt-4 pb-1">
+              {item.separator}
+            </p>
+          )
+          const { path, label, icon, exact, badge } = item
+          return (
+            <NavLink
+              key={path}
+              to={path}
+              end={exact}
+              onClick={() => setSidebarOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-primary text-white shadow-md'
+                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                }`
+              }
+            >
+              {icon}
+              <span>{label}</span>
+              {badge === 'contacts' && stats?.contacts?.non_lus > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {stats.contacts.non_lus}
+                </span>
+              )}
+            </NavLink>
+          )
+        })}
       </nav>
 
       {/* Bouton déconnexion en bas */}

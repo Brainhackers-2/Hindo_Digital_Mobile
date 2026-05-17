@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   HiMail, HiCog, HiPhotograph, HiAcademicCap,
-  HiClipboardList, HiStar, HiNewspaper, HiArrowRight
+  HiClipboardList, HiStar, HiNewspaper, HiArrowRight, HiPlay
 } from 'react-icons/hi'
 import AdminLayout from '../layout/AdminLayout'
 import adminApi   from '../services/adminApi'
@@ -65,13 +65,14 @@ const AdminDashboard = () => {
 
         {/* Grille de statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <StatCard label="Messages"     valeur={stats?.contacts?.total}    icon={<HiMail size={22} />}        couleur="bg-primary"          lien="/admin/contacts"     badge={stats?.contacts?.non_lus} />
-          <StatCard label="Services"     valeur={stats?.services}           icon={<HiCog size={22} />}         couleur="bg-secondary"        lien="/admin/services"    />
-          <StatCard label="Réalisations" valeur={stats?.realisations}       icon={<HiPhotograph size={22} />}  couleur="bg-blue-600"         lien="/admin/realisations" />
-          <StatCard label="Formations"   valeur={stats?.formations}         icon={<HiAcademicCap size={22} />} couleur="bg-green-600"        lien="/admin/formations"  />
-          <StatCard label="Inscriptions" valeur={stats?.inscriptions}       icon={<HiClipboardList size={22}/>}couleur="bg-yellow-500"       lien="/admin/inscriptions" />
-          <StatCard label="Témoignages"  valeur={stats?.temoignages}        icon={<HiStar size={22} />}        couleur="bg-purple-600"       lien="/admin/temoignages" />
-          <StatCard label="Newsletter"   valeur={stats?.newsletters}        icon={<HiNewspaper size={22} />}   couleur="bg-pink-500"         lien="/admin/newsletter"  />
+          <StatCard label="Messages"          valeur={stats?.contacts?.total}  icon={<HiMail size={22} />}         couleur="bg-primary"      lien="/admin/contacts"     badge={stats?.contacts?.non_lus} />
+          <StatCard label="Services"          valeur={stats?.services}         icon={<HiCog size={22} />}          couleur="bg-secondary"    lien="/admin/services"    />
+          <StatCard label="Photos (Galerie)"  valeur={stats?.realisations}     icon={<HiPhotograph size={22} />}   couleur="bg-blue-600"     lien="/admin/realisations" />
+          <StatCard label="Vidéos (Galerie)"  valeur={stats?.videos}           icon={<HiPlay size={22} />}         couleur="bg-indigo-600"   lien="/admin/videos"      />
+          <StatCard label="Formations"        valeur={stats?.formations}       icon={<HiAcademicCap size={22} />}  couleur="bg-green-600"    lien="/admin/formations"  />
+          <StatCard label="Inscriptions"      valeur={stats?.inscriptions}     icon={<HiClipboardList size={22}/>} couleur="bg-yellow-500"   lien="/admin/inscriptions" />
+          <StatCard label="Témoignages"       valeur={stats?.temoignages}      icon={<HiStar size={22} />}         couleur="bg-purple-600"   lien="/admin/temoignages" />
+          <StatCard label="Newsletter"        valeur={stats?.newsletters}      icon={<HiNewspaper size={22} />}    couleur="bg-pink-500"     lien="/admin/newsletter"  />
         </div>
 
         {/* Derniers messages */}
