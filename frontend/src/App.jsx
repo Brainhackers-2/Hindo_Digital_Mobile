@@ -24,6 +24,7 @@ const Services     = lazy(() => import('./pages/Services'))
 const Realisations = lazy(() => import('./pages/Realisations'))
 const Formation    = lazy(() => import('./pages/Formation'))
 const Contact      = lazy(() => import('./pages/Contact'))
+const Galerie      = lazy(() => import('./pages/Galerie'))
 const NotFound     = lazy(() => import('./pages/NotFound'))
 
 // Pages admin (lazy loading)
@@ -87,6 +88,7 @@ function App() {
             <Route path="/services"     element={<Services />}     />
             <Route path="/realisations" element={<Realisations />} />
             <Route path="/formation"    element={<Formation />}    />
+            <Route path="/galerie"      element={<Galerie />}      />
             <Route path="/contact"      element={<Contact />}      />
             <Route path="*"             element={<NotFound />}     />
           </Route>

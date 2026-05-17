@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { path: '/services',     label: 'Services'     },
   { path: '/realisations', label: 'Réalisations' },
   { path: '/formation',    label: 'Formation'    },
-  { path: '/contact',      label: 'Contact'      },
+  { path: '/galerie',      label: 'Galerie'      },
 ]
 
 const Navbar = () => {
@@ -65,7 +65,7 @@ const Navbar = () => {
             </li>
           ))}
           <li className="ml-2">
-            <Link to="/contact" className="btn-primary text-sm">
+            <Link to="/galerie" className="btn-primary text-sm">
               Nous contacter
             </Link>
           </li>
