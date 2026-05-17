@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HiX, HiPhotograph, HiPlay, HiChevronLeft, HiChevronRight } from 'react-icons/hi'
 
-import SectionHeader  from '../components/SectionHeader'
-import LoadingSpinner from '../components/LoadingSpinner'
-import useFetch       from '../hooks/useFetch'
-import { getGalerie } from '../services/galerieApi'
-import { getVideos }  from '../services/videosApi'
+import SectionHeader     from '../components/SectionHeader'
+import LoadingSpinner    from '../components/LoadingSpinner'
+import useFetchRealtime  from '../hooks/useFetchRealtime'
+import { getGalerie }    from '../services/galerieApi'
+import { getVideos }     from '../services/videosApi'
 
 // Lightbox avec navigation
 const Lightbox = ({ photos, index, onClose }) => {
@@ -70,8 +70,8 @@ const Galerie = () => {
   const [lightboxIdx, setLightboxIdx] = useState(null)
   const [videoActif, setVideoActif]   = useState(null)
 
-  const { data: photos, loading: loadPhotos }   = useFetch(getGalerie)
-  const { data: videos, loading: loadVideos }   = useFetch(getVideos)
+  const { data: photos, loading: loadPhotos } = useFetchRealtime(getGalerie, 'galerie')
+  const { data: videos, loading: loadVideos } = useFetchRealtime(getVideos, 'videos')
 
   const getEmbed = (url = '') => {
     const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/)
