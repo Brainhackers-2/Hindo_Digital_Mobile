@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiHome, HiMail, HiCog, HiPhotograph, HiAcademicCap,
   HiUsers, HiStar, HiNewspaper, HiMenu, HiX, HiPlay,
-  HiLogout, HiChevronDown, HiClipboardList, HiAdjustments, HiPencilAlt
+  HiLogout, HiChevronDown, HiClipboardList, HiAdjustments, HiPencilAlt, HiShieldCheck
 } from 'react-icons/hi'
 import { useAuthAdmin } from '../context/AuthAdminContext'
 import { LogoIcon } from '../../components/Footer'
@@ -19,23 +19,24 @@ import { LogoIcon } from '../../components/Footer'
 const NAV_ITEMS = [
   { path: '/admin',              label: 'Dashboard',         icon: <HiHome size={20} />,         exact: true },
   { separator: 'Contenu' },
-  { path: '/admin/contacts',     label: 'Messages',          icon: <HiMail size={20} />,         badge: 'contacts' },
-  { path: '/admin/services',     label: 'Services',          icon: <HiCog size={20} />           },
-  { path: '/admin/formations',   label: 'Formations',        icon: <HiAcademicCap size={20} />   },
-  { path: '/admin/inscriptions', label: 'Inscriptions',      icon: <HiClipboardList size={20} /> },
-  { path: '/admin/temoignages',  label: 'Témoignages',       icon: <HiStar size={20} />          },
-  { path: '/admin/newsletter',   label: 'Newsletter',        icon: <HiNewspaper size={20} />     },
+  { path: '/admin/contacts',     label: 'Messages',          icon: <HiMail size={20} />,         badge: 'contacts', permission: 'contacts' },
+  { path: '/admin/services',     label: 'Services',          icon: <HiCog size={20} />,          permission: 'services' },
+  { path: '/admin/formations',   label: 'Formations',        icon: <HiAcademicCap size={20} />,  permission: 'formations' },
+  { path: '/admin/inscriptions', label: 'Inscriptions',      icon: <HiClipboardList size={20} />,permission: 'inscriptions' },
+  { path: '/admin/temoignages',  label: 'Témoignages',       icon: <HiStar size={20} />,         permission: 'temoignages' },
+  { path: '/admin/newsletter',   label: 'Newsletter',        icon: <HiNewspaper size={20} />,    permission: 'newsletter' },
   { separator: 'Galerie' },
-  { path: '/admin/galerie',      label: 'Galerie (site)',    icon: <HiPhotograph size={20} />    },
-  { path: '/admin/realisations', label: 'Réalisations',      icon: <HiPhotograph size={20} />    },
-  { path: '/admin/videos',       label: 'Vidéos',            icon: <HiPlay size={20} />          },
+  { path: '/admin/galerie',      label: 'Galerie (site)',    icon: <HiPhotograph size={20} />,   permission: 'galerie' },
+  { path: '/admin/realisations', label: 'Réalisations',      icon: <HiPhotograph size={20} />,   permission: 'realisations' },
+  { path: '/admin/videos',       label: 'Vidéos',            icon: <HiPlay size={20} />,         permission: 'videos' },
   { separator: 'Paramètres' },
-  { path: '/admin/contenu',      label: 'Contenu des pages', icon: <HiPencilAlt size={20} />     },
-  { path: '/admin/settings',     label: 'Logo & Images',     icon: <HiAdjustments size={20} />   },
+  { path: '/admin/contenu',       label: 'Contenu des pages', icon: <HiPencilAlt size={20} />,  permission: 'contenu'  },
+  { path: '/admin/settings',      label: 'Logo & Images',     icon: <HiAdjustments size={20} />,permission: 'settings' },
+  { path: '/admin/utilisateurs',  label: 'Utilisateurs',      icon: <HiShieldCheck size={20} />, superAdminOnly: true  },
 ]
 
 const AdminLayout = ({ children, stats }) => {
-  const { admin, logout } = useAuthAdmin()
+  const { admin, profil, logout, isSuperAdmin, aAcces } = useAuthAdmin()
   const navigate          = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -59,11 +60,27 @@ const AdminLayout = ({ children, stats }) => {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item, i) => {
-          if (item.separator) return (
-            <p key={i} className="text-white/30 text-[10px] font-bold uppercase tracking-widest px-4 pt-4 pb-1">
-              {item.separator}
-            </p>
-          )
+          // Filtre selon les permissions
+          if (item.superAdminOnly && !isSuperAdmin) return null
+          if (item.permission && !aAcces(item.permission)) return null
+
+          if (item.separator) {
+            // Vérifie si au moins un item sous ce séparateur est visible
+            const suivants = NAV_ITEMS.slice(i + 1)
+            const aDesItemsVisibles = suivants.some(it => {
+              if (it.separator) return false
+              if (it.superAdminOnly && !isSuperAdmin) return false
+              if (it.permission && !aAcces(it.permission)) return false
+              return true
+            })
+            if (!aDesItemsVisibles) return null
+            return (
+              <p key={i} className="text-white/30 text-[10px] font-bold uppercase tracking-widest px-4 pt-4 pb-1">
+                {item.separator}
+              </p>
+            )
+          }
+
           const { path, label, icon, exact, badge } = item
           return (
             <NavLink
@@ -170,8 +187,8 @@ const AdminLayout = ({ children, stats }) => {
                 {admin?.name?.charAt(0).toUpperCase() || 'A'}
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-semibold text-secondary leading-none">{admin?.name || 'Admin'}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{admin?.email}</p>
+                <p className="text-sm font-semibold text-secondary leading-none">{profil?.nom || admin?.email || 'Admin'}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{isSuperAdmin ? 'Super Admin' : 'Administrateur'}</p>
               </div>
               <HiChevronDown size={16} className="text-gray-400" />
             </button>

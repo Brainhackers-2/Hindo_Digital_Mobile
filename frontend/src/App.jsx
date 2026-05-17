@@ -40,7 +40,8 @@ const AdminNewsletter  = lazy(() => import('./admin/pages/AdminNewsletter'))
 const AdminSettings    = lazy(() => import('./admin/pages/AdminSettings'))
 const AdminContenu     = lazy(() => import('./admin/pages/AdminContenu'))
 const AdminVideos      = lazy(() => import('./admin/pages/AdminVideos'))
-const AdminGalerie     = lazy(() => import('./admin/pages/AdminGalerie'))
+const AdminGalerie       = lazy(() => import('./admin/pages/AdminGalerie'))
+const AdminUtilisateurs  = lazy(() => import('./admin/pages/AdminUtilisateurs'))
 
 // ---- Layout public — UNE SEULE instance de Navbar et Footer ----
 // Outlet rend la page enfant entre Navbar et Footer
@@ -135,6 +136,9 @@ function App() {
           } />
           <Route path="/admin/galerie" element={
             <AdminGuard><AdminGalerie /></AdminGuard>
+          } />
+          <Route path="/admin/utilisateurs" element={
+            <AdminGuard><AdminUtilisateurs /></AdminGuard>
           } />
 
         </Routes>
