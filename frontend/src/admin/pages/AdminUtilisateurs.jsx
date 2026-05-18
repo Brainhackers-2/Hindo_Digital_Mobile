@@ -88,33 +88,22 @@ const AdminUtilisateurs = () => {
     setSaving(true); setErreur(''); setSucces('')
     try {
       if (modal === 'create') {
-        // Récupère le token de session pour l'API serverless
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) throw new Error('Session expirée — reconnectez-vous')
-
-        const res = await fetch('/api/admin-users', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            email: form.email,
-            password: form.password,
-            nom: form.nom,
-            est_super_admin: form.est_super_admin,
-            permissions: form.est_super_admin ? ['all'] : form.permissions,
-          }),
+        // Création via RPC Supabase (fonction SQL SECURITY DEFINER)
+        const { error } = await supabase.rpc('creer_admin_user', {
+          p_email:           form.email,
+          p_password:        form.password,
+          p_nom:             form.nom,
+          p_est_super_admin: form.est_super_admin,
+          p_permissions:     form.est_super_admin ? ['all'] : form.permissions,
         })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Erreur création')
+        if (error) throw error
         setSucces('Utilisateur créé. Il peut maintenant se connecter avec ses identifiants.')
       } else {
-        // Modifier profil existant (pas besoin de l'API serverless)
+        // Modification du profil existant
         const { error } = await supabase.from('admin_profiles').update({
-          nom: form.nom,
+          nom:             form.nom,
           est_super_admin: form.est_super_admin,
-          permissions: form.est_super_admin ? ['all'] : form.permissions,
+          permissions:     form.est_super_admin ? ['all'] : form.permissions,
         }).eq('id', modal.id)
         if (error) throw error
         setSucces('Profil mis à jour.')
@@ -132,18 +121,8 @@ const AdminUtilisateurs = () => {
     if (u.id === moi?.id) { setErreur('Vous ne pouvez pas supprimer votre propre compte.'); return }
     if (!confirm(`Supprimer l'utilisateur ${u.nom} ?`)) return
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Session expirée — reconnectez-vous')
-      const res = await fetch('/api/admin-users', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ userId: u.id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      const { error } = await supabase.rpc('supprimer_admin_user', { p_user_id: u.id })
+      if (error) throw error
       await charger()
     } catch (e) {
       setErreur(e.message)
