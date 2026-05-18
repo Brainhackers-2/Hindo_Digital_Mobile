@@ -44,6 +44,14 @@ export const abonnerNewsletter = async (formData) => {
   return { data: { success: true } }
 }
 
+export const soumettresTemoignage = async ({ nom, poste, texte, note }) => {
+  const { error } = await supabase
+    .from('temoignages')
+    .insert([{ nom, poste: poste || null, texte, note, actif: false }])
+  if (error) throw error
+  return { data: { success: true } }
+}
+
 export const getTemoignages = async () => {
   const { data, error } = await supabase
     .from('temoignages')

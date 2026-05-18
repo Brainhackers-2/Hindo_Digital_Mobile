@@ -5,9 +5,10 @@
 
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import {
   HiUsers, HiLightBulb, HiClipboardList, HiStar, HiArrowRight,
-  HiShieldCheck, HiSupport, HiPhone
+  HiShieldCheck, HiSupport, HiPhone, HiCheckCircle
 } from 'react-icons/hi'
 import { FaWhatsapp } from 'react-icons/fa'
 
@@ -18,7 +19,7 @@ import LoadingSpinner   from '../components/LoadingSpinner'
 import useFetch          from '../hooks/useFetch'
 import useFetchRealtime   from '../hooks/useFetchRealtime'
 import { getServices }    from '../services/servicesApi'
-import { getTemoignages } from '../services/contactApi'
+import { getTemoignages, soumettresTemoignage } from '../services/contactApi'
 import { useContenu }      from '../context/ContenuContext'
 import { useSiteSettings } from '../context/SiteSettingsContext'
 
@@ -47,11 +48,16 @@ const ARGUMENTS = [
   { titre: 'Approche pédagogique',   desc: 'Pour l\'autonomisation de nos clients — nous vous formons à maîtriser vos outils.', icon: <HiUsers size={22} /> },
 ]
 
+const FORM_VIDE = { nom: '', poste: '', texte: '', note: 5 }
+
 const Accueil = () => {
   const { data: services, loading: loadingServices } = useFetchRealtime(getServices, 'services')
   const { data: temoignages, loading: loadingTemo }  = useFetchRealtime(getTemoignages, 'temoignages')
   const { c }                                    = useContenu()
   const { heroImageUrl, heroImageTaille = 100 }  = useSiteSettings()
+  const [formTemo, setFormTemo]   = useState(FORM_VIDE)
+  const [envoi, setEnvoi]         = useState(null) // null | 'loading' | 'ok' | 'error'
+  const [errTemo, setErrTemo]     = useState('')
 
   // Stats et arguments construits dynamiquement depuis le CMS
   const stats = [
@@ -349,6 +355,122 @@ const Accueil = () => {
                 <TemoignageCard key={temo.id || i} temoignage={temo} index={i} />
               ))}
             </div>
+          )}
+        </div>
+      </section>
+
+      {/* ====================================================
+          FORMULAIRE TÉMOIGNAGE PUBLIC
+          ==================================================== */}
+      <section className="section bg-white">
+        <div className="container-custom max-w-2xl">
+          <SectionHeader
+            titre="Partagez votre expérience"
+            sousTitre="Votre avis compte — laissez-nous un témoignage, il sera publié après validation"
+          />
+
+          {envoi === 'ok' ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center"
+            >
+              <HiCheckCircle className="text-green-500 mx-auto mb-3" size={48} />
+              <p className="font-bold text-secondary text-lg">Merci pour votre témoignage !</p>
+              <p className="text-gray-500 text-sm mt-1">Il sera publié après validation par notre équipe.</p>
+              <button
+                onClick={() => { setEnvoi(null); setFormTemo(FORM_VIDE) }}
+                className="mt-4 text-primary text-sm hover:underline"
+              >
+                Laisser un autre témoignage
+              </button>
+            </motion.div>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (!formTemo.nom || !formTemo.texte) return
+                setEnvoi('loading'); setErrTemo('')
+                try {
+                  await soumettresTemoignage(formTemo)
+                  setEnvoi('ok')
+                } catch (err) {
+                  setErrTemo(err.message || 'Une erreur est survenue.')
+                  setEnvoi('error')
+                }
+              }}
+              className="bg-neutral rounded-2xl p-6 md:p-8 space-y-5"
+            >
+              {/* Note étoiles */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-secondary">Votre note</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button
+                      key={n} type="button"
+                      onClick={() => setFormTemo(f => ({ ...f, note: n }))}
+                      className="focus:outline-none transition-transform hover:scale-110"
+                    >
+                      <HiStar
+                        size={28}
+                        className={n <= formTemo.note ? 'text-yellow-400' : 'text-gray-300'}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nom */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-secondary">Nom complet *</label>
+                <input
+                  type="text" required
+                  value={formTemo.nom}
+                  onChange={e => setFormTemo(f => ({ ...f, nom: e.target.value }))}
+                  placeholder="Ex : Mamadou Diallo"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary bg-white"
+                />
+              </div>
+
+              {/* Poste */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-secondary">Poste / Entreprise <span className="text-gray-400">(optionnel)</span></label>
+                <input
+                  type="text"
+                  value={formTemo.poste}
+                  onChange={e => setFormTemo(f => ({ ...f, poste: e.target.value }))}
+                  placeholder="Ex : Directeur, PME Ziguinchor"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary bg-white"
+                />
+              </div>
+
+              {/* Témoignage */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-secondary">Votre témoignage *</label>
+                <textarea
+                  required rows={4}
+                  value={formTemo.texte}
+                  onChange={e => setFormTemo(f => ({ ...f, texte: e.target.value }))}
+                  placeholder="Décrivez votre expérience avec Hindo Digital..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary bg-white resize-none"
+                />
+              </div>
+
+              {errTemo && (
+                <p className="text-red-500 text-sm">{errTemo}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={envoi === 'loading'}
+                className="w-full btn-primary py-3 flex items-center justify-center gap-2"
+              >
+                {envoi === 'loading'
+                  ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Envoi en cours...</>
+                  : 'Envoyer mon témoignage'
+                }
+              </button>
+            </form>
           )}
         </div>
       </section>
