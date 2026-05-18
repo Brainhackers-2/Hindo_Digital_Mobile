@@ -1,4 +1,6 @@
 # Dossier racine — ignorer les fichiers inutiles
+.env
+.env.local
 backend-old/
 backend/vendor/
 backend/node_modules/

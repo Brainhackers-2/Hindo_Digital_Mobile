@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   HiUsers, HiLightBulb, HiClipboardList, HiStar, HiArrowRight,
-  HiShieldCheck, HiSupport
+  HiShieldCheck, HiSupport, HiPhone
 } from 'react-icons/hi'
 import { FaWhatsapp } from 'react-icons/fa'
 
@@ -210,7 +210,7 @@ const Accueil = () => {
                 {[c('general_tel1'), c('general_tel2'), c('general_tel3')].filter(Boolean).map((tel) => (
                   <a key={tel} href={`tel:${tel.replace(/\s/g,'')}`}
                     className="text-white/60 hover:text-white text-sm flex items-center gap-1 transition-colors">
-                    📞 {tel}
+                    <HiPhone size={14} /> {tel}
                   </a>
                 ))}
               </motion.div>
@@ -371,7 +371,9 @@ const Accueil = () => {
           </p>
           <div className="flex flex-wrap justify-center gap-4 mb-8 text-white/70 text-sm">
             {[c('general_tel1'), c('general_tel2'), c('general_tel3')].filter(Boolean).map(tel => (
-              <a key={tel} href={`tel:${tel.replace(/\s/g,'')}`} className="hover:text-white transition-colors">📞 {tel}</a>
+              <a key={tel} href={`tel:${tel.replace(/\s/g,'')}`} className="flex items-center gap-1 hover:text-white transition-colors">
+                <HiPhone size={14} /> {tel}
+              </a>
             ))}
           </div>
           <div className="flex flex-wrap justify-center gap-4">

@@ -18,9 +18,9 @@ export const AuthAdminProvider = ({ children }) => {
         .select('nom, est_super_admin, permissions')
         .eq('id', user.id)
         .maybeSingle()
-      setProfil(data || { nom: user.email, est_super_admin: true, permissions: ['all'] })
+      setProfil(data || { nom: user.email, est_super_admin: false, permissions: [] })
     } catch {
-      setProfil({ nom: user.email, est_super_admin: true, permissions: ['all'] })
+      setProfil({ nom: user.email, est_super_admin: false, permissions: [] })
     }
   }, [])
 
