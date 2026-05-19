@@ -106,6 +106,17 @@ const AdminUtilisateurs = () => {
           permissions:     form.est_super_admin ? ['all'] : form.permissions,
         }).eq('id', modal.id)
         if (error) throw error
+
+        // Modifier email / mot de passe si renseignés
+        if (form.email || form.password) {
+          const { error: authErr } = await supabase.rpc('modifier_admin_user', {
+            p_user_id:  modal.id,
+            p_email:    form.email    || null,
+            p_password: form.password || null,
+          })
+          if (authErr) throw authErr
+        }
+
         setSucces('Profil mis à jour.')
       }
       await charger()
@@ -274,23 +285,29 @@ const AdminUtilisateurs = () => {
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary" />
                 </div>
 
-                {/* Email — seulement à la création */}
-                {modal === 'create' && (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-secondary flex items-center gap-2"><HiUser size={14}/> Email</label>
-                      <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-                        placeholder="utilisateur@email.com"
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-secondary flex items-center gap-2"><HiLockClosed size={14}/> Mot de passe</label>
-                      <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
-                        placeholder="Minimum 6 caractères"
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary" />
-                    </div>
-                  </>
-                )}
+                {/* Email */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-secondary flex items-center gap-2">
+                    <HiUser size={14}/> Email
+                    {modal !== 'create' && <span className="text-xs text-gray-400 font-normal">(laisser vide pour ne pas changer)</span>}
+                  </label>
+                  <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})}
+                    placeholder="utilisateur@email.com"
+                    required={modal === 'create'}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary" />
+                </div>
+
+                {/* Mot de passe */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-secondary flex items-center gap-2">
+                    <HiLockClosed size={14}/> Mot de passe
+                    {modal !== 'create' && <span className="text-xs text-gray-400 font-normal">(laisser vide pour ne pas changer)</span>}
+                  </label>
+                  <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
+                    placeholder={modal === 'create' ? 'Minimum 6 caractères' : 'Nouveau mot de passe...'}
+                    required={modal === 'create'}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary" />
+                </div>
 
                 {/* Rôle super admin */}
                 <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/20 cursor-pointer"
