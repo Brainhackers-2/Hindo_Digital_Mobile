@@ -3,42 +3,36 @@
 // Gère automatiquement les états loading, data et error
 // ============================================================
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
-/**
- * Hook générique de récupération de données depuis une API
- * @param {Function} fetchFn — Fonction API à appeler (ex: getServices)
- * @param {Array} deps — Dépendances qui déclenchent un rechargement
- * @returns {{ data, loading, error, refetch }}
- */
 const useFetch = (fetchFn, deps = []) => {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
+  const hasData = useRef(false)
 
-  const fetchData = async () => {
-    setLoading(true)
+  const fetchData = async (silent = false) => {
+    // Si on a déjà des données (cache API ou visite précédente), pas de spinner
+    if (!silent && !hasData.current) setLoading(true)
     setError(null)
     try {
       const response = await fetchFn()
-      // L'API Laravel renvoie { success, data, message }
-      setData(response.data?.data ?? response.data)
+      const result = response.data?.data ?? response.data
+      hasData.current = true
+      setData(result)
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Impossible de charger les données.'
-      )
+      setError(err.response?.data?.message || 'Impossible de charger les données.')
     } finally {
       setLoading(false)
     }
   }
 
-  // Déclenche le fetch au montage et quand les dépendances changent
   useEffect(() => {
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
 
-  return { data, loading, error, refetch: fetchData }
+  return { data, loading, error, refetch: () => fetchData(true) }
 }
 
 export default useFetch

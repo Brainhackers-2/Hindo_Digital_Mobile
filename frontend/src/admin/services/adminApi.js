@@ -5,6 +5,14 @@
 
 import { supabase } from '../../lib/supabase'
 
+// ---- Cache 30 secondes — évite de refaire les requêtes à chaque navigation ----
+const CACHE = new Map()
+const TTL   = 30_000
+
+const fromCache = (k)    => { const e = CACHE.get(k); return e && Date.now() - e.t < TTL ? e.v : null }
+const toCache   = (k, v) => { CACHE.set(k, { v, t: Date.now() }); return v }
+const bust      = (...keys) => keys.forEach(k => CACHE.delete(k))
+
 // ---- Helpers génériques ----
 
 const publicUrl = (path) =>
@@ -58,28 +66,28 @@ export const supprimerPhoto = async (id) => {
 
 // ---- DASHBOARD ----
 export const getDashboard = async () => {
-  const [contacts, services, realisations, videos, galerie, formations, inscriptions, newsletters, temoignages] =
-    await Promise.all([
-      supabase.from('contacts').select('id, lu', { count: 'exact' }),
-      supabase.from('services').select('id', { count: 'exact' }),
-      supabase.from('realisations').select('id', { count: 'exact' }),
-      supabase.from('videos').select('id', { count: 'exact' }),
-      supabase.from('galerie').select('id', { count: 'exact' }),
-      supabase.from('formations').select('id', { count: 'exact' }),
-      supabase.from('inscriptions').select('id', { count: 'exact' }),
-      supabase.from('newsletters').select('id', { count: 'exact' }).eq('actif', true),
-      supabase.from('temoignages').select('id', { count: 'exact' }),
-    ])
+  // Tout en parallèle — head:true = compte seulement, sans récupérer les données
+  const [
+    contacts, services, realisations, videos, galerie,
+    formations, inscriptions, newsletters, temoignages,
+    derniersContacts, dernieresInscriptions,
+  ] = await Promise.all([
+    supabase.from('contacts').select('id,lu',    { count: 'exact' }),
+    supabase.from('services').select('*',        { count: 'exact', head: true }),
+    supabase.from('realisations').select('*',    { count: 'exact', head: true }),
+    supabase.from('videos').select('*',          { count: 'exact', head: true }),
+    supabase.from('galerie').select('*',         { count: 'exact', head: true }),
+    supabase.from('formations').select('*',      { count: 'exact', head: true }),
+    supabase.from('inscriptions').select('*',    { count: 'exact', head: true }),
+    supabase.from('newsletters').select('*',     { count: 'exact', head: true }).eq('actif', true),
+    supabase.from('temoignages').select('*',     { count: 'exact', head: true }),
+    supabase.from('contacts').select('id,nom,sujet,created_at')
+      .eq('lu', false).order('created_at', { ascending: false }).limit(5),
+    supabase.from('inscriptions').select('id,nom,created_at,formations(titre)')
+      .order('created_at', { ascending: false }).limit(5),
+  ])
 
   const nonLus = (contacts.data || []).filter(c => !c.lu).length
-
-  const derniers_contacts = await supabase
-    .from('contacts').select('id,nom,email,sujet,created_at')
-    .eq('lu', false).order('created_at', { ascending: false }).limit(5)
-
-  const dernieres_inscriptions = await supabase
-    .from('inscriptions').select('id,nom,email,formation_id,created_at, formations(titre)')
-    .order('created_at', { ascending: false }).limit(5)
 
   return wrap({
     stats: {
@@ -93,8 +101,8 @@ export const getDashboard = async () => {
       newsletters:  newsletters.count,
       temoignages:  temoignages.count,
     },
-    derniers_contacts:      derniers_contacts.data || [],
-    dernieres_inscriptions: (dernieres_inscriptions.data || []).map(i => ({
+    derniers_contacts:      derniersContacts.data || [],
+    dernieres_inscriptions: (dernieresInscriptions.data || []).map(i => ({
       ...i, formation: i.formations,
     })),
   })
@@ -437,21 +445,27 @@ const adminApi = {
   delete: (path)        => routerDelete(path),
 }
 
-// ---- GET ----
+// ---- GET (avec cache 30s) ----
 async function routerGet(path) {
-  if (path === '/admin/dashboard')    return getDashboard()
-  if (path === '/admin/contacts')     return getContacts()
-  if (path === '/admin/services')     return getServicesAdmin()
-  if (path === '/admin/realisations') return getRealisationsAdmin()
-  if (path === '/admin/formations')   return getFormationsAdmin()
-  if (path === '/admin/inscriptions') return getInscriptions()
-  if (path === '/admin/temoignages')  return getTemoignagesAdmin()
-  if (path === '/admin/newsletters')  return getNewsletter()
-  if (path === '/admin/videos')       return getVideosAdmin()
-  if (path === '/admin/galerie')      return getGalerieAdmin()
-  if (path === '/admin/settings')     return getSettings()
-  if (path === '/admin/contenu')      return getContenu()
-  throw new Error(`[adminApi] Route GET inconnue: ${path}`)
+  const hit = fromCache(path)
+  if (hit) return hit
+
+  let result
+  if (path === '/admin/dashboard')    result = await getDashboard()
+  else if (path === '/admin/contacts')     result = await getContacts()
+  else if (path === '/admin/services')     result = await getServicesAdmin()
+  else if (path === '/admin/realisations') result = await getRealisationsAdmin()
+  else if (path === '/admin/formations')   result = await getFormationsAdmin()
+  else if (path === '/admin/inscriptions') result = await getInscriptions()
+  else if (path === '/admin/temoignages')  result = await getTemoignagesAdmin()
+  else if (path === '/admin/newsletters')  result = await getNewsletter()
+  else if (path === '/admin/videos')       result = await getVideosAdmin()
+  else if (path === '/admin/galerie')      result = await getGalerieAdmin()
+  else if (path === '/admin/settings')     result = await getSettings()
+  else if (path === '/admin/contenu')      result = await getContenu()
+  else throw new Error(`[adminApi] Route GET inconnue: ${path}`)
+
+  return toCache(path, result)
 }
 
 // ---- POST ----
@@ -461,7 +475,7 @@ async function routerPost(path, data) {
   // Galerie photo
   if (path === '/admin/galerie') {
     const file = data instanceof FormData ? data.get('image') : null
-    try { await ajouterPhoto(form, file); return ok() }
+    try { await ajouterPhoto(form, file); bust('/admin/galerie', '/admin/dashboard'); return ok() }
     catch (e) { throw new Error(e.message) }
   }
 
@@ -499,7 +513,7 @@ async function routerPost(path, data) {
   if (path === '/admin/services') {
     const imageFile = data instanceof FormData ? data.get('image') : null
     const service = await creerService(form, imageFile instanceof File ? imageFile : null)
-    return ok(service)
+    bust('/admin/services', '/admin/dashboard'); return ok(service)
   }
 
   // Modification service : /admin/services/123
@@ -508,14 +522,14 @@ async function routerPost(path, data) {
     const imageFile = data instanceof FormData ? data.get('image') : null
     const { data: s } = await supabase.from('services').select('image_path').eq('id', serviceM[1]).maybeSingle()
     const service = await modifierService(serviceM[1], form, imageFile instanceof File ? imageFile : null, s?.image_path)
-    return ok(service)
+    bust('/admin/services', '/admin/dashboard'); return ok(service)
   }
 
   // Création réalisation
   if (path === '/admin/realisations') {
     const imageFile = data instanceof FormData ? data.get('image') : null
     const real = await creerRealisation(form, imageFile instanceof File ? imageFile : null)
-    return ok(real)
+    bust('/admin/realisations', '/admin/dashboard'); return ok(real)
   }
 
   // Modification réalisation : /admin/realisations/123
@@ -524,14 +538,14 @@ async function routerPost(path, data) {
     const imageFile = data instanceof FormData ? data.get('image') : null
     const { data: r } = await supabase.from('realisations').select('image_path').eq('id', realM[1]).maybeSingle()
     const real = await modifierRealisation(realM[1], form, imageFile instanceof File ? imageFile : null, r?.image_path)
-    return ok(real)
+    bust('/admin/realisations', '/admin/dashboard'); return ok(real)
   }
 
   // Création vidéo
   if (path === '/admin/videos') {
     const videoFile = data instanceof FormData ? data.get('video_file') : null
     const video = await creerVideo(form, videoFile instanceof File ? videoFile : null)
-    return ok(video)
+    bust('/admin/videos', '/admin/dashboard'); return ok(video)
   }
 
   // Modification vidéo : /admin/videos/123
@@ -540,18 +554,18 @@ async function routerPost(path, data) {
     const videoFile = data instanceof FormData ? data.get('video_file') : null
     const { data: v } = await supabase.from('videos').select('video_file_path').eq('id', videoM[1]).maybeSingle()
     const video = await modifierVideo(videoM[1], form, videoFile instanceof File ? videoFile : null, v?.video_file_path)
-    return ok(video)
+    bust('/admin/videos', '/admin/dashboard'); return ok(video)
   }
 
   // Formations
   if (path === '/admin/formations') {
     const f = await creerFormation(form)
-    return ok(f)
+    bust('/admin/formations', '/admin/dashboard'); return ok(f)
   }
   // Témoignages
   if (path === '/admin/temoignages') {
     const t = await creerTemoignage(form)
-    return ok(t)
+    bust('/admin/temoignages', '/admin/dashboard'); return ok(t)
   }
 
   return ok()
@@ -560,14 +574,15 @@ async function routerPost(path, data) {
 // ---- PUT ----
 async function routerPut(path, data) {
   const formationM = path.match(/^\/admin\/formations\/(\d+)$/)
-  if (formationM) return ok(await modifierFormation(formationM[1], data))
+  if (formationM) { bust('/admin/formations', '/admin/dashboard'); return ok(await modifierFormation(formationM[1], data)) }
 
   const temoignageM = path.match(/^\/admin\/temoignages\/(\d+)$/)
-  if (temoignageM) return ok(await modifierTemoignage(temoignageM[1], data))
+  if (temoignageM) { bust('/admin/temoignages', '/admin/dashboard'); return ok(await modifierTemoignage(temoignageM[1], data)) }
 
   const serviceM = path.match(/^\/admin\/services\/(\d+)$/)
   if (serviceM) {
     const { data: s } = await supabase.from('services').select('image_path').eq('id', serviceM[1]).maybeSingle()
+    bust('/admin/services', '/admin/dashboard')
     return ok(await modifierService(serviceM[1], data, null, s?.image_path))
   }
 
@@ -583,62 +598,52 @@ async function routerPatch(path) {
 
 // ---- DELETE ----
 async function routerDelete(path) {
-  // Logo et photo équipe
-  if (path === '/admin/settings/logo')        { await deleteLogo();       return ok() }
-  if (path === '/admin/settings/team-image')  { await deleteTeamImage();  return ok() }
-  if (path === '/admin/settings/hero-image')  { await deleteHeroImage();  return ok() }
+  if (path === '/admin/settings/logo')        { await deleteLogo();      bust('/admin/settings'); return ok() }
+  if (path === '/admin/settings/team-image')  { await deleteTeamImage(); bust('/admin/settings'); return ok() }
+  if (path === '/admin/settings/hero-image')  { await deleteHeroImage(); bust('/admin/settings'); return ok() }
 
-  // Photo galerie
   const galerieM = path.match(/^\/admin\/galerie\/(.+)$/)
-  if (galerieM) { await supprimerPhoto(galerieM[1]); return ok() }
+  if (galerieM) { await supprimerPhoto(galerieM[1]); bust('/admin/galerie', '/admin/dashboard'); return ok() }
 
-  // Image d'un service seul
   const svcImgM = path.match(/^\/admin\/services\/(\d+)\/image$/)
   if (svcImgM) {
     const { data: s } = await supabase.from('services').select('image_path').eq('id', svcImgM[1]).maybeSingle()
     await supprimerServiceImage(svcImgM[1], s?.image_path)
-    return ok()
+    bust('/admin/services'); return ok()
   }
 
-  // Service complet
   const svcM = path.match(/^\/admin\/services\/(\d+)$/)
   if (svcM) {
     const { data: s } = await supabase.from('services').select('image_path').eq('id', svcM[1]).maybeSingle()
     await supprimerService(svcM[1], s?.image_path)
-    return ok()
+    bust('/admin/services', '/admin/dashboard'); return ok()
   }
 
-  // Réalisation
   const realM = path.match(/^\/admin\/realisations\/(\d+)$/)
   if (realM) {
     const { data: r } = await supabase.from('realisations').select('image_path').eq('id', realM[1]).maybeSingle()
     await supprimerRealisation(realM[1], r?.image_path)
-    return ok()
+    bust('/admin/realisations', '/admin/dashboard'); return ok()
   }
 
-  // Vidéo
   const videoM = path.match(/^\/admin\/videos\/(\d+)$/)
   if (videoM) {
     const { data: v } = await supabase.from('videos').select('video_file_path').eq('id', videoM[1]).maybeSingle()
     await supprimerVideo(videoM[1], v?.video_file_path)
-    return ok()
+    bust('/admin/videos', '/admin/dashboard'); return ok()
   }
 
-  // Formation
   const formM = path.match(/^\/admin\/formations\/(\d+)$/)
-  if (formM) { await supprimerFormation(formM[1]); return ok() }
+  if (formM) { await supprimerFormation(formM[1]); bust('/admin/formations', '/admin/dashboard'); return ok() }
 
-  // Témoignage
   const temoM = path.match(/^\/admin\/temoignages\/(\d+)$/)
-  if (temoM) { await supprimerTemoignage(temoM[1]); return ok() }
+  if (temoM) { await supprimerTemoignage(temoM[1]); bust('/admin/temoignages', '/admin/dashboard'); return ok() }
 
-  // Inscription
   const inscrM = path.match(/^\/admin\/inscriptions\/(\d+)$/)
-  if (inscrM) { await supprimerInscription(inscrM[1]); return ok() }
+  if (inscrM) { await supprimerInscription(inscrM[1]); bust('/admin/inscriptions', '/admin/dashboard'); return ok() }
 
-  // Contact
   const contM = path.match(/^\/admin\/contacts\/(\d+)$/)
-  if (contM) { await supprimerContact(contM[1]); return ok() }
+  if (contM) { await supprimerContact(contM[1]); bust('/admin/contacts', '/admin/dashboard'); return ok() }
 
   return ok()
 }
