@@ -52,7 +52,7 @@ async function getAdminProfil(userId) {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, PATCH, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -124,6 +124,30 @@ export default async function handler(req, res) {
     }
 
     return res.json({ success: true, user: { id: newUserId, email } })
+  }
+
+  // ── Modifier email / mot de passe ──
+  if (req.method === 'PATCH') {
+    const { userId, email, password } = body
+    if (!userId) return res.status(400).json({ error: 'userId requis' })
+
+    const updates = {}
+    if (email)    { updates.email = email; updates.email_confirm = true }
+    if (password) { updates.password = password }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'Email ou mot de passe requis' })
+    }
+
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+      method:  'PUT',
+      headers: adminHeaders(),
+      body:    JSON.stringify(updates),
+    })
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) return res.status(400).json({ error: data.message || data.msg || JSON.stringify(data) })
+
+    return res.json({ success: true })
   }
 
   // ── Supprimer un utilisateur ──

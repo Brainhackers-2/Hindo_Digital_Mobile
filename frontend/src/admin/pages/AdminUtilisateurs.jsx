@@ -107,14 +107,24 @@ const AdminUtilisateurs = () => {
         }).eq('id', modal.id)
         if (error) throw error
 
-        // Modifier email / mot de passe si renseignés
+        // Modifier email / mot de passe via l'API serverless (service role key)
         if (form.email || form.password) {
-          const { error: authErr } = await supabase.rpc('modifier_admin_user', {
-            p_user_id:  modal.id,
-            p_email:    form.email    || null,
-            p_password: form.password || null,
+          const { data: { session } } = await supabase.auth.getSession()
+          if (!session) throw new Error('Session expirée — reconnectez-vous')
+          const res = await fetch('/api/admin-users', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type':  'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              userId:   modal.id,
+              email:    form.email    || null,
+              password: form.password || null,
+            }),
           })
-          if (authErr) throw authErr
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok) throw new Error(data.error || 'Erreur mise à jour email/mot de passe')
         }
 
         setSucces('Profil mis à jour.')
