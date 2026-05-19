@@ -25,11 +25,19 @@ export const AuthAdminProvider = ({ children }) => {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setAdmin(session?.user ?? null)
-      await chargerProfil(session?.user ?? null)
-      setLoading(false)
-    })
+    // Timeout de sécurité : si Supabase ne répond pas en 5s, on débloque quand même
+    const timeout = setTimeout(() => setLoading(false), 5000)
+
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        setAdmin(session?.user ?? null)
+        await chargerProfil(session?.user ?? null)
+      })
+      .catch(() => {})
+      .finally(() => {
+        clearTimeout(timeout)
+        setLoading(false)
+      })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setAdmin(session?.user ?? null)
@@ -37,7 +45,10 @@ export const AuthAdminProvider = ({ children }) => {
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [chargerProfil])
 
   const login = async (email, password) => {
