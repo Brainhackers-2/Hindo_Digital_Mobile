@@ -11,6 +11,7 @@ import Footer        from './components/Footer'
 import ScrollToTop   from './components/ScrollToTop'
 import LoadingSpinner from './components/LoadingSpinner'
 import ChatBot       from './components/ChatBot'
+import PWAInstallPrompt from './components/PWAInstallPrompt'
 
 // Contextes globaux
 import { AuthAdminProvider, useAuthAdmin } from './admin/context/AuthAdminContext'
@@ -55,6 +56,8 @@ const LayoutPublic = () => (
     <Footer />
     {/* Chatbot IA — visible sur toutes les pages publiques */}
     <ChatBot />
+    {/* Bannière d'installation PWA */}
+    <PWAInstallPrompt />
   </>
 )
 
