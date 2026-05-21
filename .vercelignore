@@ -1,0 +1,11 @@
+backend
+backend-old
+api
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.avif
+*.bat
+SUPABASE_SETUP.sql
+README.md
